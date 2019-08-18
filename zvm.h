@@ -1,66 +1,23 @@
 
 #include <stdint.h>
+#include <stdlib.h>
+
 #include "defs.h"
+#include "structs.h"
 
-typedef struct {
-	uint64_t length, version, invalidated;
-	uint64_t preserved_count, reserved_positions_count, main_reserved_position;
-	uint64_t data_section_element_count;
-	
-} zed_meta_section_t;
-
-typedef struct {
-	uint8_t* data;
-	
-	uint64_t  element_count, element_count_bytes;
-	uint64_t* element_element_count; void** start_positions;
-	
-	uint8_t* contiguous_data;
-	
-} zed_data_section_t;
-
-typedef struct {
-	int64_t registers[REGISTER_COUNT];
-	
-} zed_state_t;
-
-#define ZED_BDA_SIGNATURE 0xBDA5BDA5BDA5BDA5
-typedef struct {
-	uint64_t signature;
-	
-	#ifdef KOS_BDA_EXTENSION
-		kos_bda_extension_t extension;
-	#endif
-} zed_bda_t;
-
-typedef struct {
-	void* pointer;
-	int64_t warning_count;
-	
-	zed_meta_section_t* meta;
-	zed_data_section_t data_section;
-	
-	uint64_t reserved_count;
-	void** reserved;
-	
-	zed_state_t state;
-	zed_bda_t* bda;
-	
-} zed_program_t;
-
-void zed_program_run_setup_phase(zed_program_t* self) {
-	self->warning_count = 0;
+void zvm_program_run_setup_phase(zvm_program_t* self) {
 	uint8_t* pointer = (uint8_t*) self->pointer;
+	memset(&self->state, 0, sizeof(self->state));
 	
 	// parse meta section
 	
-	self->meta = (zed_meta_section_t*) pointer;
+	self->meta = (zvm_meta_section_t*) pointer;
 	pointer += sizeof(*self->meta);
 	
 	// allocate bda
 	
-	self->bda = (zed_bda_t*) heap_malloc(sizeof(*self->bda));
-	self->bda->signature = ZED_BDA_SIGNATURE;
+	self->bda = (zvm_bda_t*) heap_malloc(sizeof(*self->bda));
+	self->bda->signature = ZVM_BDA_SIGNATURE;
 	
 	// parse data section
 	
@@ -109,7 +66,70 @@ void zed_program_run_setup_phase(zed_program_t* self) {
 	
 	// get ready for parsing the text section
 	
+	self->state.stack_bytes = 1ll << 16;
+	self->state.stack = (uint64_t*) malloc(self->state.stack_bytes);
+	
 	self->state.registers[REGISTER_IP] = self->meta->main_reserved_position / sizeof(uint16_t);
-	zed_push(self, TOKEN_REGISTER, REGISTER_IP);
+	self->state.stack[self->state.registers[REGISTER_SP] -= 8] = self->state.registers[REGISTER_IP];
+	self->text_section_pointer = (uint16_t*) pointer;
+	
+}
+
+#define ZVM_SIZE (sizeof(uint64_t) / sizeof(uint16_t))
+
+static inline uint64_t zvm_program_get_next_token(zvm_program_t* self, uint64_t* type, uint64_t* data) { // get the next token and advance all pointers and all
+	uint64_t token = (uint64_t) *(self->text_section_pointer + self->state.registers[REGISTER_IP]++);
+	*type = token & 0x00FF;
+	
+	if (*type == TOKEN_NUMBER || *type == TOKEN_RES_POS || *type == TOKEN_RESERVED) { // is the data size of the token 8 bytes (64 bit)?
+		if (self->state.registers[REGISTER_IP] % ZVM_SIZE) { // 16 bit aligned?
+			*data = *(((uint64_t*) self->text_section_pointer) + self->state.registers[REGISTER_IP] / ZVM_SIZE + 1);
+			self->state.registers[REGISTER_IP] = (self->state.registers[REGISTER_IP] / ZVM_SIZE + 2) * ZVM_SIZE;
+			
+		} else { // not 16 bit aligned?
+			*data = *(((uint64_t*) self->text_section_pointer) + self->state.registers[REGISTER_IP] / ZVM_SIZE + 1);
+			self->state.registers[REGISTER_IP] = (self->state.registers[REGISTER_IP] / ZVM_SIZE + 2) * ZVM_SIZE;
+			
+		}
+		
+	} else { // is the data size a single byte?
+		*data = (token & 0xFF00) >> 8;
+		
+	}
+	
+	*type = *type == TOKEN_BYTE ? TOKEN_NUMBER : type; // from now on, consider a byte token as a number token
+	return token;
+	
+}
+
+#include "instructions.h"
+
+inline int64_t zvm_program_run_loop_phase(zvm_program_t* self) {
+	uint64_t type, data;
+	zvm_program_get_next_token(self, &type, &data); // get next token
+	
+	// am assuming type == TOKEN_INSTRUCTION
+	zvm_instructions[data](self);
+	
+	if (self->state.registers[REGISTER_IP] > self->meta->length * ZVM_SIZE) {
+		self->error_code = self->state.registers[REGISTER_G0]; // get error code
+		
+		// parse signature
+		
+		uint64_t signature = *(((uint64_t*) self->text_section_pointer) + (self->state.registers[REGISTER_IP] += ZVM_SIZE) / ZVM_SIZE); 
+		char signature_string[9] = {0};
+		memcpy(signature_string, &signature, sizeof(signature));
+		
+		if (strcmp(signature_string, "AQUA-ZED") != 0) {
+			// program signature does not match the default signature
+			
+		}
+		
+		return 1; // stop execution
+		
+	} else {
+		return 0; // continue execution
+		
+	}
 	
 }
