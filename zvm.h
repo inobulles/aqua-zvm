@@ -66,8 +66,9 @@ void zvm_program_run_setup_phase(zvm_program_t* self) {
 	
 	// get ready for parsing the text section
 	
-	self->state.stack_bytes = 1ll << 16;
-	self->state.stack = (uint64_t*) malloc(self->state.stack_bytes);
+	self->state.stack_size = 1ll << 16;
+	self->state.stack = (uint64_t*) malloc(self->state.stack_size * sizeof(*self->state.stack));
+	self->state.registers[REGISTER_SP] = self->state.stack + self->state.stack_size * sizeof(*self->state.stack);
 	
 	self->state.registers[REGISTER_IP] = self->meta->main_reserved_position / sizeof(uint16_t);
 	self->state.stack[self->state.registers[REGISTER_SP] -= 8] = self->state.registers[REGISTER_IP];

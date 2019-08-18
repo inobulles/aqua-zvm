@@ -18,7 +18,7 @@ typedef struct {
 typedef struct {
 	int64_t registers[REGISTER_COUNT];
 	
-	uint64_t stack_bytes;
+	uint64_t  stack_size;
 	uint64_t* stack;
 	
 	uint8_t next_skip;
