@@ -24,9 +24,6 @@ typedef struct {
 	uint8_t next_skip;
 	int64_t nest;
 	
-	int64_t condition_left;
-	int64_t condition_right;
-	
 } zvm_state_t;
 
 #define ZVM_BDA_SIGNATURE 0xBDA5BDA5BDA5BDA5

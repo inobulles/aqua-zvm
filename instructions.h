@@ -47,7 +47,19 @@ static void zvm_cla(zvm_program_t* self) {
 	
 }
 
+static void zvm_cnd(zvm_program_t* self) {
+	uint64_t condition_type, condition_data; zvm_program_get_next_token(self, &condition_type, &condition_data);
+	self->state.next_skip = self->state.registers[condition_data]; // assuming condition_type == TOKEN_REGISTER
+	
+} static void zvm_cmp(zvm_program_t* self) {
+	
+	
+}
+
 static void (*zvm_instructions)(zvm_program_t* self)[INSTRUCTION_COUNT] = { // list of all instruction function pointers for fast indexing
 	(void*) zvm_cla,
 	(void*) zvm_mov,
+	
+	(void*) zvm_cnd;
+	(void*) zvm_cmp;
 };
