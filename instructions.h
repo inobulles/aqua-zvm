@@ -52,7 +52,15 @@ static void zvm_cnd(zvm_program_t* self) {
 	self->state.next_skip = self->state.registers[condition_data]; // assuming condition_type == TOKEN_REGISTER
 	
 } static void zvm_cmp(zvm_program_t* self) {
+	uint64_t left_type, left_data;   zvm_program_get_next_token(self, &left_type, &left_data);   int64_t left  = zvm_get_value(self, left_type, left_data);
+	uint64_t right_type, right_data; zvm_program_get_next_token(self, &right_type, &right_data); int64_t right = zvm_get_value(self, right_type, right_data);
 	
+	int64_t result = left - right;
+	
+	self->state.registers[REGISTER_OF] = (result < 0) == (left < 0);
+	self->state.registers[REGISTER_SF] = result < 0;
+	self->state.registers[REGISTER_CF] = abs(right) < abs(left);
+	self->state.registers[REGISTER_ZF] = !result;
 	
 }
 
