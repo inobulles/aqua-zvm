@@ -5,13 +5,15 @@
 
 #define TOKEN_KEYWORD   0 // keyword
 #define TOKEN_REGISTER  1 // register
+
 #define TOKEN_RESERVED  2 // reserved
+#define TOKEN_RES_POS   3 // reserved position 
 
-#define TOKEN_ADDR      3 // address
-#define TOKEN_BYTE_ADDR 4 // byte address
+#define TOKEN_ADDRESS   4 // address
+#define TOKEN_BYTE_ADDR 5 // byte address
 
-#define TOKEN_NUMBER    5 // number
-#define TOKEN_BYTE      6 // byte
+#define TOKEN_NUMBER    6 // number
+#define TOKEN_BYTE      7 // byte
 
 // instructions
 
