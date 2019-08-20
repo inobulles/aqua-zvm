@@ -115,12 +115,13 @@ static void zvm_psh(zvm_program_t* self) {
 
 static void zvm_add(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result + operating); }
 static void zvm_sub(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result - operating); }
+static void zvm_mul(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result * operating); }
 
-static void zvm_mul(zvm_program_t* self) {
-	//~ ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result * operating);
+static void zvm_div(zvm_program_t* self) {
+	ZVM_OPERATION_INSTRUCTION_HEADER
 	
-} static void zvm_div(zvm_program_t* self) {
-	//~ ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result / operating);
+	zvm_set_value(self, result_type, result_data, result / operating);
+	self->state.registers[REGISTER_A0] = result % operating;
 	
 }
 
