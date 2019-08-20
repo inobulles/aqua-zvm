@@ -140,30 +140,11 @@ static void zvm_shr(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_
 static void zvm_ror(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, ( int64_t) result >> operating); }
 
 static void (*zvm_instructions)(zvm_program_t* self)[INSTRUCTION_COUNT] = { // list of all instruction function pointers for fast indexing
-	(void*) zvm_cla,
-	(void*) zvm_mov,
-	
-	(void*) zvm_cnd,
-	(void*) zvm_cmp,
-	
-	(void*) zvm_jmp,
-	(void*) zvm_cal,
-	(void*) zvm_ret,
-	
-	(void*) zvm_psh,
-	(void*) zvm_pop,
-	
-	(void*) zvm_add,
-	(void*) zvm_sub,
-	(void*) zvm_mul,
-	(void*) zvm_div,
-	
-	(void*) zvm_and,
-	(void*) zvm_or,
-	(void*) zvm_xor,
-	(void*) zvm_not,
-	
-	(void*) zvm_shl,
-	(void*) zvm_shr,
-	(void*) zvm_ror,
+	(void*) zvm_cla, (void*) zvm_mov,                                   // general instructions used everywhere
+	(void*) zvm_cnd, (void*) zvm_cmp,                                   // conditional instructions
+	(void*) zvm_jmp, (void*) zvm_cal, (void*) zvm_ret,                  // instructions that control the flow of the program
+	(void*) zvm_psh, (void*) zvm_pop,                                   // instructions that push on and pop off the stack
+	(void*) zvm_add, (void*) zvm_sub, (void*) zvm_mul, (void*) zvm_div, // basic arithmetic instructions
+	(void*) zvm_and, (void*) zvm_or,  (void*) zvm_xor, (void*) zvm_not, // bitwise arithmetic instructions
+	(void*) zvm_shl, (void*) zvm_shr, (void*) zvm_ror,                  // bitwise shift and rotation instructions
 };
