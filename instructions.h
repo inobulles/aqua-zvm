@@ -64,10 +64,25 @@ static void zvm_cnd(zvm_program_t* self) {
 	
 }
 
+static void zvm_jmp(zvm_program_t* self) {
+	uint64_t type, data;
+	zvm_program_get_next_token(self, &type, &data);
+	self->state.registers[REGISTER_IP] = zvm_get_value(self, type, data) / sizeof(uint16_t);
+	
+} static void zvm_cal(zvm_program_t* self) {
+	
+} static void zvm_ret(zvm_program_t* self) {
+	
+}
+
 static void (*zvm_instructions)(zvm_program_t* self)[INSTRUCTION_COUNT] = { // list of all instruction function pointers for fast indexing
 	(void*) zvm_cla,
 	(void*) zvm_mov,
 	
-	(void*) zvm_cnd;
-	(void*) zvm_cmp;
+	(void*) zvm_cnd,
+	(void*) zvm_cmp,
+	
+	(void*) zvm_jmp,
+	(void*) zvm_cal,
+	(void*) zvm_ret,
 };
