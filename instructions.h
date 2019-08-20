@@ -70,6 +70,23 @@ static void zvm_jmp(zvm_program_t* self) {
 	self->state.registers[REGISTER_IP] = zvm_get_value(self, type, data) / sizeof(uint16_t);
 	
 } static void zvm_cal(zvm_program_t* self) {
+	uint64_t type, data;
+	zvm_program_get_next_token(self, &type, &data);
+	
+	if (type == TOKEN_RESERVED) { // handle reserved token types differently
+		self->state.registers[REGISTER_G0] = ((int64_t (*) (int64_t, int64_t, int64_t, int64_t)) self->reserved[data])( \
+			self->state.registers[REGISTER_A0], \
+			self->state.registers[REGISTER_A1], \
+			self->state.registers[REGISTER_A2], \
+			self->state.registers[REGISTER_A3]);
+		
+	} else {
+		self->state.nest++;
+		
+		*((int64_t*) (self->state.registers[REGISTER_SP] -= sizeof(int64_t))) = (int64_t) self->state.registers[REGISTER_IP]; // push the current IP to the stack
+		self->state.registers[REGISTER_IP] = zvm_get_value(self, type, data) / sizeof(uint16_t); // jump
+		
+	}
 	
 } static void zvm_ret(zvm_program_t* self) {
 	
