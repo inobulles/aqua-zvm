@@ -65,8 +65,7 @@ static void zvm_cnd(zvm_program_t* self) {
 }
 
 static void zvm_jmp(zvm_program_t* self) {
-	uint64_t type, data;
-	zvm_program_get_next_token(self, &type, &data);
+	uint64_t type, data; zvm_program_get_next_token(self, &type, &data);
 	self->state.registers[REGISTER_IP] = zvm_get_value(self, type, data) / sizeof(uint16_t);
 	
 } static void zvm_cal(zvm_program_t* self) {
@@ -83,7 +82,7 @@ static void zvm_jmp(zvm_program_t* self) {
 	} else {
 		self->state.nest++;
 		
-		*((int64_t*) (self->state.registers[REGISTER_SP] -= sizeof(int64_t))) = (int64_t) self->state.registers[REGISTER_IP]; // push the current IP to the stack
+		*((int64_t*) (self->state.registers[REGISTER_SP] -= sizeof(int64_t))) = self->state.registers[REGISTER_IP]; // push the current IP to the stack
 		self->state.registers[REGISTER_IP] = zvm_get_value(self, type, data) / sizeof(uint16_t); // jump
 		
 	}
@@ -99,6 +98,14 @@ static void zvm_jmp(zvm_program_t* self) {
 	
 }
 
+static void zvm_psh(zvm_program_t* self) {
+	uint64_t type, data; zvm_program_get_next_token(self, &type, &data);
+	*((int64_t*) (self->state.registers[REGISTER_SP] -= sizeof(int64_t))) = zvm_get_value(self, type, data);
+	
+} static void zvm_pop(zvm_program_t* self) {
+	
+}
+
 static void (*zvm_instructions)(zvm_program_t* self)[INSTRUCTION_COUNT] = { // list of all instruction function pointers for fast indexing
 	(void*) zvm_cla,
 	(void*) zvm_mov,
@@ -109,4 +116,7 @@ static void (*zvm_instructions)(zvm_program_t* self)[INSTRUCTION_COUNT] = { // l
 	(void*) zvm_jmp,
 	(void*) zvm_cal,
 	(void*) zvm_ret,
+	
+	(void*) zvm_psh,
+	(void*) zvm_pop,
 };
