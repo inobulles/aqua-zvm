@@ -135,6 +135,10 @@ static void zvm_not(zvm_program_t* self) {
 	
 }
 
+static void zvm_shl(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data,            result << operating); }
+static void zvm_shr(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, (uint64_t) result >> operating); }
+static void zvm_ror(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, ( int64_t) result >> operating); }
+
 static void (*zvm_instructions)(zvm_program_t* self)[INSTRUCTION_COUNT] = { // list of all instruction function pointers for fast indexing
 	(void*) zvm_cla,
 	(void*) zvm_mov,
@@ -158,4 +162,8 @@ static void (*zvm_instructions)(zvm_program_t* self)[INSTRUCTION_COUNT] = { // l
 	(void*) zvm_or,
 	(void*) zvm_xor,
 	(void*) zvm_not,
+	
+	(void*) zvm_shl,
+	(void*) zvm_shr,
+	(void*) zvm_ror,
 };
