@@ -109,6 +109,21 @@ static void zvm_psh(zvm_program_t* self) {
 	
 }
 
+#define ZVM_OPERATION_INSTRUCTION_HEADER \
+	uint64_t result_type, result_data;       zvm_program_get_next_token(self, &result_type, &result_data);       int64_t result    = zvm_get_value(self, result_type, result_data); \
+	uint64_t operating_type, operating_data; zvm_program_get_next_token(self, &operating_type, &operating_data); int64_t operating = zvm_get_value(self, operating_type, operating_data);
+
+static void zvm_add(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result + operating); }
+static void zvm_sub(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result - operating); }
+
+static void zvm_mul(zvm_program_t* self) {
+	//~ ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result * operating);
+	
+} static void zvm_div(zvm_program_t* self) {
+	//~ ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result / operating);
+	
+}
+
 static void (*zvm_instructions)(zvm_program_t* self)[INSTRUCTION_COUNT] = { // list of all instruction function pointers for fast indexing
 	(void*) zvm_cla,
 	(void*) zvm_mov,
@@ -122,4 +137,9 @@ static void (*zvm_instructions)(zvm_program_t* self)[INSTRUCTION_COUNT] = { // l
 	
 	(void*) zvm_psh,
 	(void*) zvm_pop,
+	
+	(void*) zvm_add,
+	(void*) zvm_sub,
+	(void*) zvm_mul,
+	(void*) zvm_div,
 };
