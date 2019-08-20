@@ -103,6 +103,9 @@ static void zvm_psh(zvm_program_t* self) {
 	*((int64_t*) (self->state.registers[REGISTER_SP] -= sizeof(int64_t))) = zvm_get_value(self, type, data);
 	
 } static void zvm_pop(zvm_program_t* self) {
+	uint64_t type, data; zvm_program_get_next_token(self, &type, &data);
+	zvm_set_value(self, type, data, *((int64_t*) self->state.registers[REGISTER_SP]));
+	self->state.registers[REGISTER_SP] += sizeof(int64_t);
 	
 }
 
