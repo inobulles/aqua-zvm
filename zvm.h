@@ -70,8 +70,7 @@ void zvm_program_run_setup_phase(zvm_program_t* self) {
 	self->state.stack = (uint64_t*) malloc(self->state.stack_size * sizeof(*self->state.stack));
 	self->state.registers[REGISTER_SP] = self->state.stack + self->state.stack_size * sizeof(*self->state.stack);
 	
-	self->state.registers[REGISTER_IP] = self->meta->main_reserved_position / sizeof(uint16_t);
-	self->state.stack[self->state.registers[REGISTER_SP] -= 8] = self->state.registers[REGISTER_IP];
+	self->state.stack[self->state.registers[REGISTER_SP] -= sizeof(int64_t)] = self->state.registers[REGISTER_IP] = self->meta->main_reserved_position / sizeof(uint16_t); // push main label position to stack
 	self->text_section_pointer = (uint16_t*) pointer;
 	
 }
@@ -83,11 +82,11 @@ static inline uint64_t zvm_program_get_next_token(zvm_program_t* self, uint64_t*
 	*type = token & 0x00FF;
 	
 	if (*type == TOKEN_NUMBER || *type == TOKEN_RES_POS || *type == TOKEN_RESERVED) { // is the data size of the token 8 bytes (64 bit)?
-		if (self->state.registers[REGISTER_IP] % ZVM_SIZE) { // 16 bit aligned?
+		if (self->state.registers[REGISTER_IP] % ZVM_SIZE) { // 32 bit aligned?
 			*data = *(((uint64_t*) self->text_section_pointer) + self->state.registers[REGISTER_IP] / ZVM_SIZE + 1);
 			self->state.registers[REGISTER_IP] = (self->state.registers[REGISTER_IP] / ZVM_SIZE + 2) * ZVM_SIZE;
 			
-		} else { // not 16 bit aligned?
+		} else { // not 32 bit aligned?
 			*data = *(((uint64_t*) self->text_section_pointer) + self->state.registers[REGISTER_IP] / ZVM_SIZE + 1);
 			self->state.registers[REGISTER_IP] = (self->state.registers[REGISTER_IP] / ZVM_SIZE + 2) * ZVM_SIZE;
 			

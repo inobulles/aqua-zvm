@@ -89,6 +89,13 @@ static void zvm_jmp(zvm_program_t* self) {
 	}
 	
 } static void zvm_ret(zvm_program_t* self) {
+	if (--self->state.nest < 0) { // exit program if returning to nothing
+		self->state.registers[REGISTER_IP] = self->meta->length * ZVM_SIZE;
+		
+	}
+	
+	self->state.registers[REGISTER_IP] = *((int64_t*) self->state.registers[REGISTER_SP]); // return to call position
+	self->state.registers[REGISTER_SP] += sizeof(int64_t); // pop off IP from stack
 	
 }
 
