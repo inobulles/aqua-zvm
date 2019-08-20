@@ -17,7 +17,7 @@
 
 // instructions
 
-#define INSTRUCTION_COUNT 19
+#define INSTRUCTION_COUNT 20
 
 #define INSTRUCTION_CLA 0  // calculate address
 #define INSTRUCTION_MOV 1  // move
@@ -42,8 +42,9 @@
 #define INSTRUCTION_XOR 15 // exclusive or
 #define INSTRUCTION_NOT 16 // not
 
-#define INSTRUCTION_SHL 17 // left shift
-#define INSTRUCTION_SHR 18 // right shift
+#define INSTRUCTION_SHL 17 // shift left
+#define INSTRUCTION_SHR 18 // shift right
+#define INSTRUCTION_ROR 19 // rotate right
 
 // registers
 

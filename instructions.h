@@ -125,6 +125,16 @@ static void zvm_div(zvm_program_t* self) {
 	
 }
 
+static void zvm_and(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result & operating); }
+static void zvm_or (zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result | operating); }
+static void zvm_xor(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result ^ operating); }
+
+static void zvm_not(zvm_program_t* self) {
+	uint64_t type, data; zvm_program_get_next_token(self, &type, &data);
+	zvm_set_value(self, type, data, ~zvm_get_value(self, type, data));
+	
+}
+
 static void (*zvm_instructions)(zvm_program_t* self)[INSTRUCTION_COUNT] = { // list of all instruction function pointers for fast indexing
 	(void*) zvm_cla,
 	(void*) zvm_mov,
@@ -143,4 +153,9 @@ static void (*zvm_instructions)(zvm_program_t* self)[INSTRUCTION_COUNT] = { // l
 	(void*) zvm_sub,
 	(void*) zvm_mul,
 	(void*) zvm_div,
+	
+	(void*) zvm_and,
+	(void*) zvm_or,
+	(void*) zvm_xor,
+	(void*) zvm_not,
 };
