@@ -73,7 +73,8 @@ static void zvm_jmp(zvm_program_t* self) {
 	zvm_program_get_next_token(self, &type, &data);
 	
 	if (type == TOKEN_RESERVED) { // handle reserved token types differently
-		self->state.registers[REGISTER_G0] = ((int64_t (*) (int64_t, int64_t, int64_t, int64_t)) self->reserved[data])( \
+		self->state.registers[REGISTER_G0] = ((int64_t (*) (zvm_program_t*, int64_t, int64_t, int64_t, int64_t)) self->reserved[data])( \
+			self, \
 			self->state.registers[REGISTER_A0], \
 			self->state.registers[REGISTER_A1], \
 			self->state.registers[REGISTER_A2], \
@@ -89,7 +90,7 @@ static void zvm_jmp(zvm_program_t* self) {
 	
 } static void zvm_ret(zvm_program_t* self) {
 	if (--self->state.nest < 0) { // exit program if returning to nothing
-		self->state.registers[REGISTER_IP] = self->meta->length * ZVM_SIZE;
+		zvm_exit(self, self->state.registers[REGISTER_G0]);
 		
 	}
 	

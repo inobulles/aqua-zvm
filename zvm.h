@@ -4,6 +4,7 @@
 
 #include "defs.h"
 #include "structs.h"
+#include "kos.h"
 
 void zvm_program_run_setup_phase(zvm_program_t* self) {
 	uint8_t* pointer = (uint8_t*) self->pointer;
@@ -48,11 +49,11 @@ void zvm_program_run_setup_phase(zvm_program_t* self) {
 	
 	// build the reserved list (with the prereserved pointers and the data section element pointers)
 	
-	self->reserved_count = self->meta->preserved_count + self->data_section.element_count;
+	self->reserved_count = self->meta->prereserved_count + self->data_section.element_count;
 	self->reserved = (void**) malloc(self->reserved_count * sizeof(void*));
 	
-	for (uint64_t i = 0; i < self->meta->preserved_count;      i++) self->reserved[i]                               = preserved                         [i];
-	for (uint64_t i = 0; i < self->data_section.element_count; i++) self->reserved[i + self->meta->preserved_count] = self->data_section.start_positions[i];
+	for (uint64_t i = 0; i < self->meta->prereserved_count;    i++) self->reserved[i]                                 = prereserved                       [i];
+	for (uint64_t i = 0; i < self->data_section.element_count; i++) self->reserved[i + self->meta->prereserved_count] = self->data_section.start_positions[i];
 	
 	// parse the reserved positions section
 	
