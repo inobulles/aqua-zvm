@@ -17,7 +17,7 @@ void zvm_program_run_setup_phase(zvm_program_t* self) {
 	
 	// allocate bda
 	
-	self->bda = (zvm_bda_t*) heap_malloc(sizeof(*self->bda));
+	self->bda = (zvm_bda_t*) zvm_malloc((uint64_t) self, sizeof(*self->bda));
 	self->bda->signature = ZVM_BDA_SIGNATURE;
 	
 	// parse data section
@@ -57,28 +57,26 @@ void zvm_program_run_setup_phase(zvm_program_t* self) {
 	
 	// parse the reserved positions section
 	
-	pointer = (uint64_t*) temp_contiguous_data;
+	uint64_t* pointer64 = (uint64_t*) temp_contiguous_data;
 	self->reserved_positions = (uint64_t*) malloc(self->meta->reserved_positions_count * sizeof(uint64_t));
 	
 	for (uint64_t i = 0; i < self->meta->reserved_positions_count; i++) {
-		self->reserved_positions[i] = *pointer++;
+		self->reserved_positions[i] = *pointer64++;
 		
 	}
 	
 	// get ready for parsing the text section
 	
 	self->state.stack_size = 1ll << 16;
-	self->state.stack = (uint64_t*) malloc(self->state.stack_size * sizeof(*self->state.stack));
-	self->state.registers[REGISTER_SP] = self->state.stack + self->state.stack_size * sizeof(*self->state.stack);
+	self->state.stack = (uint64_t*) zvm_malloc((uint64_t) self, self->state.stack_size * sizeof(*self->state.stack));
+	self->state.registers[REGISTER_SP] = (int64_t) (self->state.stack + self->state.stack_size * sizeof(*self->state.stack));
 	
 	self->state.stack[self->state.registers[REGISTER_SP] -= sizeof(int64_t)] = self->state.registers[REGISTER_IP] = self->meta->main_reserved_position / sizeof(uint16_t); // push main label position to stack
-	self->text_section_pointer = (uint16_t*) pointer;
+	self->text_section_pointer = (uint16_t*) pointer64;
 	
 }
 
-#define ZVM_SIZE (sizeof(uint64_t) / sizeof(uint16_t))
-
-static inline uint64_t zvm_program_get_next_token(zvm_program_t* self, uint64_t* type, uint64_t* data) { // get the next token and advance all pointers and all
+inline uint64_t zvm_program_get_next_token(zvm_program_t* self, uint64_t* type, uint64_t* data) { // get the next token and advance all pointers and all
 	uint64_t token = (uint64_t) *(self->text_section_pointer + self->state.registers[REGISTER_IP]++);
 	*type = token & 0x00FF;
 	
@@ -98,7 +96,7 @@ static inline uint64_t zvm_program_get_next_token(zvm_program_t* self, uint64_t*
 		
 	}
 	
-	*type = *type == TOKEN_BYTE ? TOKEN_NUMBER : type; // from now on, consider a byte token as a number token
+	*type = *type == TOKEN_BYTE ? TOKEN_NUMBER : *type; // from now on, consider a byte token as a number token
 	return token;
 	
 }
@@ -110,7 +108,7 @@ inline int64_t zvm_program_run_loop_phase(zvm_program_t* self) {
 	zvm_program_get_next_token(self, &type, &data); // get next token
 	
 	// am assuming type == TOKEN_INSTRUCTION
-	zvm_instructions[data](self);
+	((void (*)(zvm_program_t* self)) zvm_instructions[data])(self);
 	
 	if (self->state.registers[REGISTER_IP] > self->meta->length * ZVM_SIZE) {
 		self->error_code = self->state.registers[REGISTER_G0]; // get error code

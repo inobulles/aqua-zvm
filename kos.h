@@ -3,13 +3,13 @@ int64_t zvm_noop() {
 	printf("This is a no-operation function. If you reach this, either your current KOS is incomplete, either you have a severe problem in your code\n");
 	return 1;
 	
-} void zvm_print(zvm_program_t* self, uint64_t string) {
-	printf((const char*) string);
+} void zvm_print(uint64_t self, uint64_t string) {
+	printf("%s", (const char*) string);
 	fflush(stdout);
 	
-} void zvm_exit(zvm_program_t* self, int64_t error_code) {
-	self->state.registers[REGISTER_G0] = error_code;
-	self->state.registers[REGISTER_IP] = self->meta->length * ZVM_SIZE + 1;
+} void zvm_exit(uint64_t self, int64_t error_code) {
+	((zvm_program_t*) self)->state.registers[REGISTER_G0] = error_code;
+	((zvm_program_t*) self)->state.registers[REGISTER_IP] = ((zvm_program_t*) self)->meta->length * ZVM_SIZE + 1;
 	
 }
 
@@ -17,11 +17,11 @@ int64_t zvm_noop() {
 // ideally, these would all be in a sandboxed heap,
 // but this is "example code", and for readability's sake, I've opted for this
 
-void* zvm_malloc(zvm_program_t* self, uint64_t bytes) { return malloc(bytes); }
-void  zvm_mfree (zvm_program_t* self, uint64_t pointer, uint64_t bytes) { free((void*) pointer); }
+void* zvm_malloc(uint64_t self, uint64_t bytes) { return malloc(bytes); }
+void  zvm_mfree (uint64_t self, uint64_t pointer, uint64_t bytes) { free((void*) pointer); }
 
-void  zvm_mcpy  (zvm_program_t* self, uint64_t dst, uint64_t src,  uint64_t bytes) { memcpy((void*) dst, (void*) src, bytes); }
-void  zvm_mset  (zvm_program_t* self, uint64_t dst, uint64_t byte, uint64_t bytes) { memset((void*) dst, (char) byte, bytes); }
+void  zvm_mcpy  (uint64_t self, uint64_t dst, uint64_t src,  uint64_t bytes) { memcpy((void*) dst, (void*) src, bytes); }
+void  zvm_mset  (uint64_t self, uint64_t dst, uint64_t byte, uint64_t bytes) { memset((void*) dst, (char) byte, bytes); }
 
 static void* prereserved[] = { // prereserved functions from the kos (some of these are integrated in this file as they are common between all kos's)
 	(void*) zvm_noop,           (void*) zvm_print,            (void*) zvm_exit,                                                                        // base functions

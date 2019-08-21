@@ -1,3 +1,5 @@
+#define ZVM_SIZE (sizeof(uint64_t) / sizeof(uint16_t))
+
 typedef struct {
 	uint64_t length, version, invalidated;
 	uint64_t prereserved_count, reserved_positions_count, main_reserved_position;
@@ -43,6 +45,7 @@ typedef struct {
 	zvm_data_section_t data_section;
 	uint16_t* text_section_pointer;
 	
+	uint64_t* reserved_positions;
 	uint64_t reserved_count;
 	void** reserved;
 	

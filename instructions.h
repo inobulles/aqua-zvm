@@ -16,7 +16,7 @@ static inline void zvm_set_value(zvm_program_t* self, uint64_t type, uint64_t da
 	else if (type == TOKEN_NUMBER)    return data; // we don't need to handle TOKEN_BYTE, as bytes are anyway converted to numbers by zvm_program_get_next_token
 	
 	else if (type == TOKEN_RES_POS)   return self->reserved_positions[data];
-	else if (type == TOKEN_RESERVED)  return self->reserved[data];
+	else if (type == TOKEN_RESERVED)  return (int64_t) self->reserved[data];
 	
 	else return data; // if we don't know what to return, just give back data
 	
@@ -73,8 +73,8 @@ static void zvm_jmp(zvm_program_t* self) {
 	zvm_program_get_next_token(self, &type, &data);
 	
 	if (type == TOKEN_RESERVED) { // handle reserved token types differently
-		self->state.registers[REGISTER_G0] = ((int64_t (*) (zvm_program_t*, int64_t, int64_t, int64_t, int64_t)) self->reserved[data])( \
-			self, \
+		self->state.registers[REGISTER_G0] = ((int64_t (*)(uint64_t, int64_t, int64_t, int64_t, int64_t)) self->reserved[data])( \
+			(uint64_t) self, \
 			self->state.registers[REGISTER_A0], \
 			self->state.registers[REGISTER_A1], \
 			self->state.registers[REGISTER_A2], \
@@ -90,7 +90,7 @@ static void zvm_jmp(zvm_program_t* self) {
 	
 } static void zvm_ret(zvm_program_t* self) {
 	if (--self->state.nest < 0) { // exit program if returning to nothing
-		zvm_exit(self, self->state.registers[REGISTER_G0]);
+		zvm_exit((uint64_t) self, self->state.registers[REGISTER_G0]);
 		
 	}
 	
@@ -140,7 +140,7 @@ static void zvm_shl(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_
 static void zvm_shr(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, (uint64_t) result >> operating); }
 static void zvm_ror(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, ( int64_t) result >> operating); }
 
-static void (*zvm_instructions)(zvm_program_t* self)[INSTRUCTION_COUNT] = { // list of all instruction function pointers for fast indexing
+void* zvm_instructions[INSTRUCTION_COUNT] = { // list of all instruction function pointers for fast indexing
 	(void*) zvm_cla, (void*) zvm_mov,                                   // general instructions used everywhere
 	(void*) zvm_cnd, (void*) zvm_cmp,                                   // conditional instructions
 	(void*) zvm_jmp, (void*) zvm_cal, (void*) zvm_ret,                  // instructions that control the flow of the program
