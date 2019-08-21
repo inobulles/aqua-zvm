@@ -29,5 +29,5 @@ static void* prereserved[] = { // prereserved functions from the kos (some of th
 	(void*) kos_get_platform,   (void*) kos_platform_command, (void*) kos_create_device, (void*) kos_send_device,         (void*) kos_native,          // platform and device functions
 	(void*) kos_video_width,    (void*) kos_video_height,     (void*) kos_video_fps,     (void*) kos_video_clear,         (void*) kos_video_flip,      // basic video functions
 	(void*) kos_create_machine, (void*) kos_execute_machine,  (void*) kos_kill_machine,  (void*) kos_give_machine_events, (void*) kos_current_machine, // machine functions
-	(void*) kos_break_point,    (void*) kos_get_events,                                                                                                // misc functions
+	(void*) kos_get_events,                                                                                                                            // misc functions
 };
