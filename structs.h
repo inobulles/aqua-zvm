@@ -2,8 +2,8 @@
 
 typedef struct {
 	uint64_t length, version, invalidated;
-	uint64_t prereserved_count, reserved_positions_count, main_reserved_position;
-	uint64_t data_section_element_count;
+	uint64_t prereserved_count, data_section_element_count;
+	uint64_t reserved_positions_count, main_reserved_position, text_section_start;
 	
 } zvm_meta_section_t;
 
