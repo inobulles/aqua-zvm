@@ -45,13 +45,13 @@ void zvm_program_run_setup_phase(zvm_program_t* self) {
 	
 	for (uint64_t i = 0; i < self->data_section.element_count; i++) {
 		self->data_section.start_positions[i] = temp_contiguous_data;
-		temp_contiguous_data += self->data_section.element_element_count[i] + 1;
+		temp_contiguous_data += self->data_section.element_element_count[i];
 		
 	}
 	
 	// parse the reserved positions section
 	
-	uint64_t* pointer64 = (uint64_t*) temp_contiguous_data;
+	uint64_t* pointer64 = (uint64_t*) ((uint64_t) (temp_contiguous_data - 1) / sizeof(uint64_t) * sizeof(uint64_t) + 8);
 	self->reserved_positions = (uint64_t*) malloc(self->meta->reserved_positions_count * sizeof(uint64_t));
 	
 	for (uint64_t i = 0; i < self->meta->reserved_positions_count; i++) {
@@ -104,6 +104,16 @@ uint64_t zvm_program_get_next_token(zvm_program_t* self, uint64_t* type, uint64_
 }
 
 #include "instructions.h"
+
+static struct { char* data; } assembler_instructions[] = {
+	{"cad"}, {"mov"},
+	{"cnd"}, {"cmp"},
+	{"jmp"}, {"cal"}, {"ret"},
+	{"psh"}, {"pop"},
+	{"add"}, {"sub"}, {"mul"}, {"div"},
+	{"and"}, {"or" }, {"xor"}, {"not"},
+	{"shl"}, {"shr"}, {"ror"},
+};
 
 int64_t zvm_program_run_loop_phase(zvm_program_t* self) {
 	uint64_t type, data;

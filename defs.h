@@ -19,7 +19,7 @@
 
 #define INSTRUCTION_COUNT 20
 
-#define INSTRUCTION_CLA 0  // calculate address
+#define INSTRUCTION_CAD 0  // calculate address
 #define INSTRUCTION_MOV 1  // move
 
 #define INSTRUCTION_CND 2  // condition

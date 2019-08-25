@@ -43,99 +43,142 @@ static void zvm_cad(zvm_program_t* self) {
 	uint64_t dst_type, dst_data; zvm_program_get_next_token(self, &dst_type, &dst_data);
 	uint64_t src_type, src_data; zvm_program_get_next_token(self, &src_type, &src_data);
 	
-	zvm_set_value(self, dst_type, dst_data, zvm_get_value(self, src_type, src_data));
+	if (!self->state.next_skip) zvm_set_value(self, dst_type, dst_data, zvm_get_value(self, src_type, src_data));
+	else self->state.next_skip = 0;
 	
 }
 
 static void zvm_cnd(zvm_program_t* self) {
 	uint64_t condition_type, condition_data; zvm_program_get_next_token(self, &condition_type, &condition_data);
-	self->state.next_skip = self->state.registers[condition_data]; // assuming condition_type == TOKEN_REGISTER
+	
+	if (!self->state.next_skip) self->state.next_skip = self->state.registers[condition_data]; // assuming condition_type == TOKEN_REGISTER
+	else self->state.next_skip = 0;
 	
 } static void zvm_cmp(zvm_program_t* self) {
-	uint64_t left_type, left_data;   zvm_program_get_next_token(self, &left_type, &left_data);   int64_t left  = zvm_get_value(self, left_type, left_data);
-	uint64_t right_type, right_data; zvm_program_get_next_token(self, &right_type, &right_data); int64_t right = zvm_get_value(self, right_type, right_data);
+	uint64_t left_type, left_data;   zvm_program_get_next_token(self, &left_type, &left_data);
+	uint64_t right_type, right_data; zvm_program_get_next_token(self, &right_type, &right_data);
 	
-	int64_t result = left - right;
-	
-	self->state.registers[REGISTER_OF] = (result < 0) == (left < 0);
-	self->state.registers[REGISTER_SF] = result < 0;
-	self->state.registers[REGISTER_CF] = abs(right) < abs(left);
-	self->state.registers[REGISTER_ZF] = !result;
+	if (!self->state.next_skip) {
+		int64_t left  = zvm_get_value(self, left_type, left_data);
+		int64_t right = zvm_get_value(self, right_type, right_data);
+		
+		int64_t result = left - right;
+		
+		self->state.registers[REGISTER_OF] = (result < 0) == (left < 0);
+		self->state.registers[REGISTER_SF] = result < 0;
+		self->state.registers[REGISTER_CF] = abs(right) < abs(left);
+		self->state.registers[REGISTER_ZF] = !result;
+		
+	} else {
+		self->state.next_skip = 0;
+		
+	}
 	
 }
 
 static void zvm_jmp(zvm_program_t* self) {
 	uint64_t type, data; zvm_program_get_next_token(self, &type, &data);
-	self->state.registers[REGISTER_IP] = zvm_get_value(self, type, data) / sizeof(uint16_t);
+	
+	if (!self->state.next_skip) self->state.registers[REGISTER_IP] = zvm_get_value(self, type, data) / sizeof(uint16_t);
+	else self->state.next_skip = 0;
 	
 } static void zvm_cal(zvm_program_t* self) {
 	uint64_t type, data;
 	zvm_program_get_next_token(self, &type, &data);
 	
-	if (type == TOKEN_RESERVED) { // handle reserved token types differently
-		self->state.registers[REGISTER_G0] = ((int64_t (*)(uint64_t, int64_t, int64_t, int64_t, int64_t)) self->reserved[data])( \
-			(uint64_t) self, \
-			self->state.registers[REGISTER_A0], \
-			self->state.registers[REGISTER_A1], \
-			self->state.registers[REGISTER_A2], \
-			self->state.registers[REGISTER_A3]);
+	if (!self->state.next_skip) {
+		if (type == TOKEN_RESERVED) { // handle reserved token types differently
+			self->state.registers[REGISTER_G0] = ((int64_t (*)(uint64_t, int64_t, int64_t, int64_t, int64_t)) self->reserved[data])( \
+				(uint64_t) self, \
+				self->state.registers[REGISTER_A0], \
+				self->state.registers[REGISTER_A1], \
+				self->state.registers[REGISTER_A2], \
+				self->state.registers[REGISTER_A3]);
+			
+		} else {
+			self->state.nest++;
+			
+			*((int64_t*) (self->state.registers[REGISTER_SP] -= sizeof(int64_t))) = self->state.registers[REGISTER_IP]; // push the current IP to the stack
+			self->state.registers[REGISTER_IP] = zvm_get_value(self, type, data) / sizeof(uint16_t); // jump
+			
+		}
 		
 	} else {
-		self->state.nest++;
-		
-		*((int64_t*) (self->state.registers[REGISTER_SP] -= sizeof(int64_t))) = self->state.registers[REGISTER_IP]; // push the current IP to the stack
-		self->state.registers[REGISTER_IP] = zvm_get_value(self, type, data) / sizeof(uint16_t); // jump
+		self->state.next_skip = 0;
 		
 	}
 	
 } static void zvm_ret(zvm_program_t* self) {
-	if (--self->state.nest < 0) zvm_exit((uint64_t) self, self->state.registers[REGISTER_G0]); // exit program if returning to nothing
-	else self->state.registers[REGISTER_IP] = *((int64_t*) self->state.registers[REGISTER_SP]); // return to call position
-	
-	self->state.registers[REGISTER_SP] += sizeof(int64_t); // pop off IP from stack
+	if (!self->state.next_skip) {
+		if (--self->state.nest < 0) zvm_exit((uint64_t) self, self->state.registers[REGISTER_G0]); // exit program if returning to nothing
+		else self->state.registers[REGISTER_IP] = *((int64_t*) self->state.registers[REGISTER_SP]); // return to call position
+		
+		self->state.registers[REGISTER_SP] += sizeof(int64_t); // pop off IP from stack
+		
+	} else {
+		self->state.next_skip = 0;
+		
+	}
 	
 }
 
 static void zvm_psh(zvm_program_t* self) {
 	uint64_t type, data; zvm_program_get_next_token(self, &type, &data);
-	*((int64_t*) (self->state.registers[REGISTER_SP] -= sizeof(int64_t))) = zvm_get_value(self, type, data);
+	
+	if (!self->state.next_skip) *((int64_t*) (self->state.registers[REGISTER_SP] -= sizeof(int64_t))) = zvm_get_value(self, type, data);
+	else self->state.next_skip = 0;
 	
 } static void zvm_pop(zvm_program_t* self) {
 	uint64_t type, data; zvm_program_get_next_token(self, &type, &data);
-	zvm_set_value(self, type, data, *((int64_t*) self->state.registers[REGISTER_SP]));
-	self->state.registers[REGISTER_SP] += sizeof(int64_t);
+	
+	if (!self->state.next_skip) {
+		zvm_set_value(self, type, data, *((int64_t*) self->state.registers[REGISTER_SP]));
+		self->state.registers[REGISTER_SP] += sizeof(int64_t);
+		
+	} else {
+		self->state.next_skip = 0;
+		
+	}
 	
 }
 
 #define ZVM_OPERATION_INSTRUCTION_HEADER \
-	uint64_t result_type, result_data;       zvm_program_get_next_token(self, &result_type, &result_data);       int64_t result    = zvm_get_value(self, result_type, result_data); \
-	uint64_t operating_type, operating_data; zvm_program_get_next_token(self, &operating_type, &operating_data); int64_t operating = zvm_get_value(self, operating_type, operating_data);
+	uint64_t result_type, result_data;       zvm_program_get_next_token(self, &result_type, &result_data); \
+	uint64_t operating_type, operating_data; zvm_program_get_next_token(self, &operating_type, &operating_data); \
+	if (!self->state.next_skip) { \
+		int64_t result    = zvm_get_value(self, result_type, result_data); \
+		int64_t operating = zvm_get_value(self, operating_type, operating_data);
 
-static void zvm_add(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result + operating); }
-static void zvm_sub(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result - operating); }
-static void zvm_mul(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result * operating); }
+#define ZVM_OPERATION_INSTRUCTION_FOOTER \
+	} else self->state.next_skip = 0;
+
+static void zvm_add(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result + operating); ZVM_OPERATION_INSTRUCTION_FOOTER }
+static void zvm_sub(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result - operating); ZVM_OPERATION_INSTRUCTION_FOOTER }
+static void zvm_mul(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result * operating); ZVM_OPERATION_INSTRUCTION_FOOTER }
 
 static void zvm_div(zvm_program_t* self) {
 	ZVM_OPERATION_INSTRUCTION_HEADER
-	
 	zvm_set_value(self, result_type, result_data, result / operating);
 	self->state.registers[REGISTER_A0] = result % operating;
+	ZVM_OPERATION_INSTRUCTION_FOOTER
 	
 }
 
-static void zvm_and(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result & operating); }
-static void zvm_or (zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result | operating); }
-static void zvm_xor(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result ^ operating); }
+static void zvm_and(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result & operating); ZVM_OPERATION_INSTRUCTION_FOOTER }
+static void zvm_or (zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result | operating); ZVM_OPERATION_INSTRUCTION_FOOTER }
+static void zvm_xor(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, result ^ operating); ZVM_OPERATION_INSTRUCTION_FOOTER }
 
 static void zvm_not(zvm_program_t* self) {
 	uint64_t type, data; zvm_program_get_next_token(self, &type, &data);
-	zvm_set_value(self, type, data, ~zvm_get_value(self, type, data));
+	
+	if (!self->state.next_skip) zvm_set_value(self, type, data, ~zvm_get_value(self, type, data));
+	else self->state.next_skip = 0;
 	
 }
 
-static void zvm_shl(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data,            result << operating); }
-static void zvm_shr(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, (uint64_t) result >> operating); }
-static void zvm_ror(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, ( int64_t) result >> operating); }
+static void zvm_shl(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data,            result << operating); ZVM_OPERATION_INSTRUCTION_FOOTER }
+static void zvm_shr(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, (uint64_t) result >> operating); ZVM_OPERATION_INSTRUCTION_FOOTER }
+static void zvm_ror(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, ( int64_t) result >> operating); ZVM_OPERATION_INSTRUCTION_FOOTER }
 
 void* zvm_instructions[INSTRUCTION_COUNT] = { // list of all instruction function pointers for fast indexing
 	(void*) zvm_cad, (void*) zvm_mov,                                   // general instructions used everywhere
