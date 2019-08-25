@@ -24,13 +24,13 @@ static inline void zvm_set_value(zvm_program_t* self, uint64_t type, uint64_t da
 
 // instruction functions
 
-static void zvm_cla(zvm_program_t* self) {
+static void zvm_cad(zvm_program_t* self) {
 	uint64_t left_type, left_data;           zvm_program_get_next_token(self, &left_type, &left_data);
 	uint64_t operation_type, operation_data; zvm_program_get_next_token(self, &operation_type, &operation_data);
 	uint64_t right_type, right_data;         zvm_program_get_next_token(self, &right_type, &right_data);
 	
 	int64_t right = right_type == TOKEN_NUMBER ? right_data : self->state.registers[right_data];
-	int64_t left  = self->state.registers[left_data]; // assuming left_type == TOKEN_REGISTER
+	int64_t left  = zvm_get_value(self, left_type, left_data);
 	
 	switch (operation_data) { // assuming operation_type == TOKEN_INSTRUCTION
 		case INSTRUCTION_SUB: self->state.registers[REGISTER_AD] = left - right; break;
@@ -89,12 +89,9 @@ static void zvm_jmp(zvm_program_t* self) {
 	}
 	
 } static void zvm_ret(zvm_program_t* self) {
-	if (--self->state.nest < 0) { // exit program if returning to nothing
-		zvm_exit((uint64_t) self, self->state.registers[REGISTER_G0]);
-		
-	}
+	if (--self->state.nest < 0) zvm_exit((uint64_t) self, self->state.registers[REGISTER_G0]); // exit program if returning to nothing
+	else self->state.registers[REGISTER_IP] = *((int64_t*) self->state.registers[REGISTER_SP]); // return to call position
 	
-	self->state.registers[REGISTER_IP] = *((int64_t*) self->state.registers[REGISTER_SP]); // return to call position
 	self->state.registers[REGISTER_SP] += sizeof(int64_t); // pop off IP from stack
 	
 }
@@ -141,7 +138,7 @@ static void zvm_shr(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_
 static void zvm_ror(zvm_program_t* self) { ZVM_OPERATION_INSTRUCTION_HEADER zvm_set_value(self, result_type, result_data, ( int64_t) result >> operating); }
 
 void* zvm_instructions[INSTRUCTION_COUNT] = { // list of all instruction function pointers for fast indexing
-	(void*) zvm_cla, (void*) zvm_mov,                                   // general instructions used everywhere
+	(void*) zvm_cad, (void*) zvm_mov,                                   // general instructions used everywhere
 	(void*) zvm_cnd, (void*) zvm_cmp,                                   // conditional instructions
 	(void*) zvm_jmp, (void*) zvm_cal, (void*) zvm_ret,                  // instructions that control the flow of the program
 	(void*) zvm_psh, (void*) zvm_pop,                                   // instructions that push on and pop off the stack

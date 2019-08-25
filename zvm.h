@@ -112,7 +112,7 @@ int64_t zvm_program_run_loop_phase(zvm_program_t* self) {
 	// am assuming type == TOKEN_INSTRUCTION
 	((void (*)(zvm_program_t* self)) zvm_instructions[data])(self);
 	
-	if (self->state.registers[REGISTER_IP] > self->meta->length * ZVM_SIZE) {
+	if (self->state.registers[REGISTER_IP] > (self->meta->length - self->meta->text_section_start) * ZVM_SIZE) {
 		self->error_code = self->state.registers[REGISTER_G0]; // get error code
 		
 		// parse signature

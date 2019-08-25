@@ -9,7 +9,7 @@ int64_t zvm_noop() {
 	
 } void zvm_exit(uint64_t self, int64_t error_code) {
 	((zvm_program_t*) self)->state.registers[REGISTER_G0] = error_code;
-	((zvm_program_t*) self)->state.registers[REGISTER_IP] = ((zvm_program_t*) self)->meta->length * ZVM_SIZE + 1;
+	((zvm_program_t*) self)->state.registers[REGISTER_IP] = (((zvm_program_t*) self)->meta->length - ((zvm_program_t*) self)->meta->text_section_start) * ZVM_SIZE + 1;
 	
 }
 
