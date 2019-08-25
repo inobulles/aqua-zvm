@@ -49,14 +49,6 @@ void zvm_program_run_setup_phase(zvm_program_t* self) {
 		
 	}
 	
-	// build the reserved list (with the prereserved pointers and the data section element pointers)
-	
-	self->reserved_count = self->meta->prereserved_count + self->data_section.element_count;
-	self->reserved = (void**) malloc(self->reserved_count * sizeof(void*));
-	
-	for (uint64_t i = 0; i < self->meta->prereserved_count;    i++) self->reserved[i]                                 = prereserved                       [i];
-	for (uint64_t i = 0; i < self->data_section.element_count; i++) self->reserved[i + self->meta->prereserved_count] = self->data_section.start_positions[i];
-	
 	// parse the reserved positions section
 	
 	uint64_t* pointer64 = (uint64_t*) temp_contiguous_data;
@@ -67,18 +59,26 @@ void zvm_program_run_setup_phase(zvm_program_t* self) {
 		
 	}
 	
+	// build the reserved list (with the prereserved pointers and the data section element pointers)
+	
+	self->reserved_count = self->meta->prereserved_count + self->data_section.element_count;
+	self->reserved = (void**) malloc(self->reserved_count * sizeof(void*));
+	
+	for (uint64_t i = 0; i < self->meta->prereserved_count;    i++) self->reserved[i]                                 = prereserved                       [i];
+	for (uint64_t i = 0; i < self->data_section.element_count; i++) self->reserved[i + self->meta->prereserved_count] = self->data_section.start_positions[i];
+	
 	// get ready for parsing the text section
 	
 	self->state.stack_size = 1ll << 16;
 	self->state.stack = (uint64_t*) zvm_malloc((uint64_t) self, self->state.stack_size * sizeof(*self->state.stack));
 	self->state.registers[REGISTER_SP] = (int64_t) (self->state.stack + self->state.stack_size * sizeof(*self->state.stack));
 	
-	self->state.stack[self->state.registers[REGISTER_SP] -= sizeof(int64_t)] = self->state.registers[REGISTER_IP] = self->meta->main_reserved_position / sizeof(uint16_t); // push main label position to stack
-	self->text_section_pointer = (uint16_t*) pointer64;
+	*((int64_t*) (self->state.registers[REGISTER_SP] -= sizeof(int64_t))) = self->state.registers[REGISTER_IP] = self->meta->main_reserved_position / sizeof(uint16_t); // push main label position to stack
+	self->text_section_pointer = (uint16_t*) (self->pointer + self->meta->text_section_start);
 	
 }
 
-inline uint64_t zvm_program_get_next_token(zvm_program_t* self, uint64_t* type, uint64_t* data) { // get the next token and advance all pointers and all
+uint64_t zvm_program_get_next_token(zvm_program_t* self, uint64_t* type, uint64_t* data) { // get the next token and advance all pointers and all
 	uint64_t token = (uint64_t) *(self->text_section_pointer + self->state.registers[REGISTER_IP]++);
 	*type = token & 0x00FF;
 	
@@ -105,7 +105,7 @@ inline uint64_t zvm_program_get_next_token(zvm_program_t* self, uint64_t* type, 
 
 #include "instructions.h"
 
-inline int64_t zvm_program_run_loop_phase(zvm_program_t* self) {
+int64_t zvm_program_run_loop_phase(zvm_program_t* self) {
 	uint64_t type, data;
 	zvm_program_get_next_token(self, &type, &data); // get next token
 	
