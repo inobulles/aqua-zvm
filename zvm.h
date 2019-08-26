@@ -105,16 +105,6 @@ uint64_t zvm_program_get_next_token(zvm_program_t* self, uint64_t* type, uint64_
 
 #include "instructions.h"
 
-static struct { char* data; } assembler_instructions[] = {
-	{"cad"}, {"mov"},
-	{"cnd"}, {"cmp"},
-	{"jmp"}, {"cal"}, {"ret"},
-	{"psh"}, {"pop"},
-	{"add"}, {"sub"}, {"mul"}, {"div"},
-	{"and"}, {"or" }, {"xor"}, {"not"},
-	{"shl"}, {"shr"}, {"ror"},
-};
-
 int64_t zvm_program_run_loop_phase(zvm_program_t* self) {
 	uint64_t type, data;
 	zvm_program_get_next_token(self, &type, &data); // get next token
