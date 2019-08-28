@@ -1,7 +1,7 @@
 
 // tokens
 
-#define TOKEN_COUNT 7
+#define TOKEN_COUNT 8
 
 #define TOKEN_INSTRUCTION 0 // instruction
 #define TOKEN_REGISTER    1 // register

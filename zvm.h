@@ -83,13 +83,13 @@ uint64_t zvm_program_get_next_token(zvm_program_t* self, uint64_t* type, uint64_
 	*type = token & 0x00FF;
 	
 	if (*type == TOKEN_NUMBER || *type == TOKEN_RES_POS || *type == TOKEN_RESERVED) { // is the data size of the token 8 bytes (64 bit)?
-		if (self->state.registers[REGISTER_IP] % ZVM_SIZE) { // 32 bit aligned?
+		if (self->state.registers[REGISTER_IP] % ZVM_SIZE) { // 64 bit / 2 byte (32 bit) aligned?
 			*data = *(((uint64_t*) self->text_section_pointer) + self->state.registers[REGISTER_IP] / ZVM_SIZE + 1);
 			self->state.registers[REGISTER_IP] = (self->state.registers[REGISTER_IP] / ZVM_SIZE + 2) * ZVM_SIZE;
 			
-		} else { // not 32 bit aligned?
-			*data = *(((uint64_t*) self->text_section_pointer) + self->state.registers[REGISTER_IP] / ZVM_SIZE + 1);
-			self->state.registers[REGISTER_IP] = (self->state.registers[REGISTER_IP] / ZVM_SIZE + 2) * ZVM_SIZE;
+		} else { // not 64 bit / 2 byte (32 bit) aligned?
+			*data = *(((uint64_t*) self->text_section_pointer) + self->state.registers[REGISTER_IP] / ZVM_SIZE);
+			self->state.registers[REGISTER_IP] = (self->state.registers[REGISTER_IP] / ZVM_SIZE + 1) * ZVM_SIZE;
 			
 		}
 		
@@ -109,7 +109,18 @@ int64_t zvm_program_run_loop_phase(zvm_program_t* self) {
 	uint64_t type, data;
 	zvm_program_get_next_token(self, &type, &data); // get next token
 	
+	static struct {const char* s;} assembler_instructions[] = {
+		{"cad"}, {"mov"},
+		{"cnd"}, {"cmp"},
+		{"jmp"}, {"cal"}, {"ret"},
+		{"psh"}, {"pop"},
+		{"add"}, {"sub"}, {"mul"}, {"div"},
+		{"and"}, {"or" }, {"xor"}, {"not"},
+		{"shl"}, {"shr"}, {"ror"},
+	};
+	
 	// am assuming type == TOKEN_INSTRUCTION
+	//~ printf("INSTRUCTION %lx\t%ld\t%s\n", type, self->state.registers[REGISTER_IP], assembler_instructions[data].s);
 	((void (*)(zvm_program_t* self)) zvm_instructions[data])(self);
 	
 	if (self->state.registers[REGISTER_IP] > (self->meta->length - self->meta->text_section_start) * ZVM_SIZE) {

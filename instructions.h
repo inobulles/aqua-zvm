@@ -51,7 +51,7 @@ static void zvm_cad(zvm_program_t* self) {
 static void zvm_cnd(zvm_program_t* self) {
 	uint64_t condition_type, condition_data; zvm_program_get_next_token(self, &condition_type, &condition_data);
 	
-	if (!self->state.next_skip) self->state.next_skip = self->state.registers[condition_data]; // assuming condition_type == TOKEN_REGISTER
+	if (!self->state.next_skip) self->state.next_skip = !zvm_get_value(self, condition_type, condition_data);
 	else self->state.next_skip = 0;
 	
 } static void zvm_cmp(zvm_program_t* self) {
