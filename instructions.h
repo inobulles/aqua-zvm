@@ -62,12 +62,13 @@ static void zvm_cnd(zvm_program_t* self) {
 		int64_t left  = zvm_get_value(self, left_type, left_data);
 		int64_t right = zvm_get_value(self, right_type, right_data);
 		
-		int64_t result = left - right;
+		int64_t subtraction = left - right;
+		int64_t addition = left + right;
 		
-		self->state.registers[REGISTER_OF] = (result < 0) == (left < 0);
-		self->state.registers[REGISTER_SF] = result < 0;
-		self->state.registers[REGISTER_CF] = abs(right) < abs(left);
-		self->state.registers[REGISTER_ZF] = !result;
+		self->state.registers[REGISTER_OF] = (left > 0 && right > 0 && addition < 0) || (left < 0 && right < 0 && addition > 0);
+		self->state.registers[REGISTER_SF] = (uint64_t) subtraction >> 63;
+		self->state.registers[REGISTER_CF] = (uint64_t) right > (uint64_t) left;
+		self->state.registers[REGISTER_ZF] = !subtraction;
 		
 	} else {
 		self->state.next_skip = 0;
