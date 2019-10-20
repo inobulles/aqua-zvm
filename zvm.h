@@ -71,7 +71,7 @@ void zvm_program_run_setup_phase(zvm_program_t* self) {
 	
 	self->state.stack_size = 1ll << 16;
 	self->state.stack = (uint64_t*) zvm_malloc((uint64_t) self, self->state.stack_size * sizeof(*self->state.stack));
-	self->state.registers[REGISTER_SP] = (int64_t) (self->state.stack + self->state.stack_size * sizeof(*self->state.stack));
+	self->state.registers[REGISTER_SP] = (int64_t) (self->state.stack + self->state.stack_size);
 	
 	*((int64_t*) (self->state.registers[REGISTER_SP] -= sizeof(int64_t))) = self->state.registers[REGISTER_IP] = self->meta->main_reserved_position / sizeof(uint16_t); // push main label position to stack
 	self->text_section_pointer = (uint16_t*) (self->pointer + self->meta->text_section_start);
