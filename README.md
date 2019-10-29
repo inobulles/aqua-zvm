@@ -1,2 +1,2 @@
-# new-aqua-zvm
-This repository contains the source code for the new and upcoming ZVM standard v4
+# aqua-zvm
+This repository contains the source code for the new ZVM standard v4
