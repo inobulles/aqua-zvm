@@ -89,7 +89,7 @@ static void zvm_jmp(zvm_program_t* self) {
 	
 	if (!self->state.next_skip) {
 		if (type == TOKEN_RESERVED) { // handle reserved token types differently
-			self->state.registers[REGISTER_G0] = ((int64_t (*)(uint64_t, int64_t, int64_t, int64_t, int64_t)) self->reserved[data])( \
+			self->state.registers[REGISTER_G0] = ((int64_t (*)(uint64_t, int64_t, int64_t, int64_t, int64_t, int64_t, int64_t, int64_t, int64_t)) self->reserved[data])( \
 				(uint64_t) self, \
 				self->state.registers[REGISTER_A0], \
 				self->state.registers[REGISTER_A1], \
