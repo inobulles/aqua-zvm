@@ -94,7 +94,11 @@ static void zvm_jmp(zvm_program_t* self) {
 				self->state.registers[REGISTER_A0], \
 				self->state.registers[REGISTER_A1], \
 				self->state.registers[REGISTER_A2], \
-				self->state.registers[REGISTER_A3]);
+				self->state.registers[REGISTER_A3], \
+				self->state.registers[REGISTER_G0], \
+				self->state.registers[REGISTER_G1], \
+				self->state.registers[REGISTER_G2], \
+				self->state.registers[REGISTER_G3]);
 			
 		} else {
 			self->state.nest++;
