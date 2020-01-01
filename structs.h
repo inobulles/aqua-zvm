@@ -28,12 +28,12 @@ typedef struct {
 	
 } zvm_state_t;
 
-#define ZVM_BDA_SIGNATURE 0xBDA5BDA5BDA5BDA5
 typedef struct {
+	#define ZVM_BDA_SIGNATURE 0xBDA5BDA5BDA5BDA5
 	uint64_t signature;
 	
-	#ifdef KOS_BDA_EXTENSION
-		kos_bda_extension_t extension;
+	#ifdef KOS_BDA
+		uint64_t kos_bda[128];
 	#endif
 } zvm_bda_t;
 

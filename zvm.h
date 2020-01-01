@@ -8,6 +8,10 @@
 #include "structs.h"
 #include "kos.h"
 
+void zvm_program_free(zvm_program_t* self) {
+	/// TODO free
+}
+
 void zvm_program_run_setup_phase(zvm_program_t* self) {
 	uint8_t* pointer = (uint8_t*) self->pointer;
 	memset(&self->state, 0, sizeof(self->state));
@@ -21,6 +25,16 @@ void zvm_program_run_setup_phase(zvm_program_t* self) {
 	
 	self->bda = (zvm_bda_t*) zvm_malloc((uint64_t) self, sizeof(*self->bda));
 	self->bda->signature = ZVM_BDA_SIGNATURE;
+	
+	#ifdef KOS_BDA
+		extern uint64_t* kos_bda;
+		extern uint64_t  kos_bda_bytes;
+		
+		kos_bda = self->bda->kos_bda;
+		kos_bda_bytes = sizeof(self->bda->kos_bda);
+		
+		zvm_mset((uint64_t) self, (uint64_t) kos_bda, 0, kos_bda_bytes);
+	#endif
 	
 	// parse data section
 	
