@@ -17,8 +17,19 @@ int64_t zvm_noop() {
 // ideally, these would all be in a sandboxed heap,
 // but this is "example code", and for readability's sake, I've opted for this
 
-void* zvm_malloc(uint64_t self, uint64_t bytes) { return malloc(bytes); }
-void  zvm_mfree (uint64_t self, uint64_t pointer, uint64_t bytes) { free((void*) pointer); }
+void* zvm_malloc(uint64_t self, uint64_t bytes) {
+	uint64_t* pointer = (uint64_t*) malloc(bytes + sizeof(uint64_t));
+	*pointer = 0; // set first value to zero to tell zvm_mfree to use "free" instead of "munmap"
+	              // this is nothing standard, just how i decided to write these functions in this particular implementation of the zvm
+	return (void*) pointer + sizeof(uint64_t);
+}
+
+void  zvm_mfree(uint64_t self, uint64_t __pointer, uint64_t bytes) {
+	uint64_t* pointer = (uint64_t*) __pointer - sizeof(uint64_t);
+	
+	if (*pointer) munmap(pointer, *pointer + sizeof(uint64_t));
+	else free(pointer);
+}
 
 void  zvm_mcpy  (uint64_t self, uint64_t dst, uint64_t src,  uint64_t bytes) { memcpy((void*) dst, (void*) src, bytes); }
 void  zvm_mset  (uint64_t self, uint64_t dst, uint64_t byte, uint64_t bytes) { memset((void*) dst, (char) byte, bytes); }
