@@ -24,10 +24,10 @@ void* zvm_malloc(uint64_t self, uint64_t bytes) {
 	return (void*) pointer + sizeof(uint64_t);
 }
 
-void  zvm_mfree(uint64_t self, uint64_t __pointer, uint64_t bytes) {
-	uint64_t* pointer = (uint64_t*) __pointer - sizeof(uint64_t);
+void  zvm_mfree(uint64_t self, uint64_t __pointer, uint64_t bytes) { // bytes argument is obsolete
+	uint64_t* pointer = (uint64_t*) (__pointer - sizeof(uint64_t));
 	
-	if (*pointer) munmap(pointer, *pointer + sizeof(uint64_t));
+	if (*pointer) munmap((void*) __pointer - sysconf(_SC_PAGESIZE), *pointer);
 	else free(pointer);
 }
 
