@@ -26,13 +26,13 @@ cpe source_a source_b source_e
 
 The instruction pointer register (`ip`) is usually set to point to the next instruction in the instruction stream, or the one after that (depending on if `source_e` is set or not), although, as with the `jmp` (jump) instruction, the specific implementation may choose to handle this differently.
 
-The carry flag (`cf`) is set if the unsigned representation of `source_a` is strictly greater than `source_b`.
+The third flag register (`f2`) is set if the unsigned representation of `source_a` is strictly greater than `source_b`.
 
-The sign flag (`sf`) is set if the result of the comparison is strictly less than 0 (negative).
+The second flag register (`f1`) is set if the result of the comparison is strictly less than 0 (negative).
 
-The offset flag (`of`) is set if the sign of the result of the comparison is **not** equal to that of `source_a`.
+The fourth flag register (`f3`) is set if the sign of the result of the comparison is **not** equal to that of `source_a`.
 
-The zero flag (`zf`) is set if the result of the comparison is equal to 0 (i.e. `source_a` is equal to `source_b`)
+The first flag register (`f0`) is set if the result of the comparison is equal to 0 (i.e. `source_a` is equal to `source_b`)
 
 ## Pseudocode
 
@@ -41,15 +41,15 @@ The zero flag (`zf`) is set if the result of the comparison is equal to 0 (i.e. 
 ```c
 #include <stdint.h>
 
-cf = (uint64_t) source_a > (uint64_t) source_b;
+f2 = (uint64_t) source_a > (uint64_t) source_b;
 
 int64_t comparison = source_a - source_b;
 uint8_t sign = (uint64_t) comparison >> 63;
 
-sf = sign;
+f1 = sign;
 
-of = (uint64_t) source_a >> 63 != sign;
-zf = comparison == 0; // i.e. source_a == source_b
+f3 = (uint64_t) source_a >> 63 != sign;
+f0 = comparison == 0; // i.e. source_a == source_b
 
 if (!source_e) { // note that 'source_e' could very well be one of the flags just set
 	goto next_instruction; // skip next instruction

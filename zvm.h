@@ -3,27 +3,62 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mman.h> // for munmap
 
-#include "structs.h"
+#include <zed.h>
+
+typedef struct {
+	int64_t registers[ZED_REGISTER_COUNT];
+	
+	uint64_t  stack_size;
+	uint64_t* stack;
+} zvm_state_t;
+
+typedef struct {
+	#define ZVM_BDA_SIGNATURE 0xBDA5BDA5BDA5BDA5
+	uint64_t signature;
+	
+	#ifdef KOS_BDA
+		uint64_t kos_bda[128];
+	#endif
+} zvm_bda_t;
+
+typedef struct {
+	void* rom;
+	int64_t error_code;
+
+	zed_meta_section_t* meta_section;
+	zed_data_section_element_t* data_section_elements;
+
+	uint64_t* positions;
+	uint64_t* logic_section;
+
+	zvm_state_t state;
+	zvm_bda_t* bda;
+} zvm_program_t;
+
 #include "kos.h"
 
 void zvm_program_free(zvm_program_t* self) {
 	/// TODO free
 }
 
-void zvm_program_run_setup_phase(zvm_program_t* self) {
-	uint8_t* pointer = (uint8_t*) self->pointer;
-	memset(&self->state, 0, sizeof(self->state));
-	
-	// parse meta section
-	
-	self->meta = (zvm_meta_section_t*) pointer;
-	pointer += sizeof(*self->meta);
-	
+int zvm_program_run_setup_phase(zvm_program_t* self) {
+	// read rom sections
+
+	self->meta_section = (zed_meta_section_t*) self->rom;
+
+	if (self->meta_section->magic != ZED_MAGIC) {
+		fprintf(stderr, "[AQUA ZVM] ERROR ROM is not a valid ZED ROM (magic = 0x%lx)\n", self->meta_section->magic);
+		return 1;
+	}
+
+	self->data_section_elements = (zed_data_section_element_t*) (self->rom + self->meta_section->data_section_offset);
+	self->positions = (uint64_t*) (self->rom + self->meta_section->position_section_offset);
+	self->logic_section = (uint64_t*) (self->rom + self->meta_section->logic_section_offset);
+
 	// allocate bda
 	
-	self->bda = (zvm_bda_t*) zvm_malloc((uint64_t) self, sizeof(*self->bda));
+	self->bda = (zvm_bda_t*) zvm_allocate(self, sizeof(*self->bda));
 	self->bda->signature = ZVM_BDA_SIGNATURE;
 	
 	#ifdef KOS_BDA
@@ -33,129 +68,70 @@ void zvm_program_run_setup_phase(zvm_program_t* self) {
 		kos_bda = self->bda->kos_bda;
 		kos_bda_bytes = sizeof(self->bda->kos_bda);
 		
-		zvm_mset((uint64_t) self, (uint64_t) kos_bda, 0, kos_bda_bytes);
+		zvm_zero(self, (uint64_t) kos_bda, kos_bda_bytes);
 	#endif
 	
-	// parse data section
-	
-	self->data_section.element_count       = self->meta->data_section_element_count;
-	self->data_section.element_count_bytes = self->meta->data_section_element_count * sizeof(uint64_t);
-	
-	self->data_section.element_element_count = (uint64_t*) malloc(self->data_section.element_count_bytes);
-	self->data_section.start_positions       = (void**)    malloc(self->data_section.element_count * sizeof(void*));
-	
-	// get the size of each data section element
-	
-	uint64_t* data_section_pointer = (uint64_t*) pointer;
-	for (uint64_t i = 0; i < self->data_section.element_count; i++) {
-		self->data_section.element_element_count[i] = *data_section_pointer++;
-		
-	}
-	
-	// get the pointers to the contents of each data section element
-	
-	self->data_section.contiguous_data = (uint8_t*) data_section_pointer;
-	uint8_t* temp_contiguous_data = self->data_section.contiguous_data;
-	
-	for (uint64_t i = 0; i < self->data_section.element_count; i++) {
-		self->data_section.start_positions[i] = temp_contiguous_data;
-		temp_contiguous_data += self->data_section.element_element_count[i];
-		
-	}
-	
-	// parse the reserved positions section
-	
-	uint64_t* pointer64 = (uint64_t*) ((uint64_t) (temp_contiguous_data - 1) / sizeof(uint64_t) * sizeof(uint64_t) + 8);
-	self->reserved_positions = (uint64_t*) malloc(self->meta->reserved_positions_count * sizeof(uint64_t));
-	
-	for (uint64_t i = 0; i < self->meta->reserved_positions_count; i++) {
-		self->reserved_positions[i] = *pointer64++;
-		
-	}
-	
-	// build the reserved list (with the prereserved pointers and the data section element pointers)
-	
-	self->reserved_count = self->meta->prereserved_count + self->data_section.element_count;
-	self->reserved = (void**) malloc(self->reserved_count * sizeof(void*));
-	
-	for (uint64_t i = 0; i < self->meta->prereserved_count;    i++) self->reserved[i]                                 = prereserved                       [i];
-	for (uint64_t i = 0; i < self->data_section.element_count; i++) self->reserved[i + self->meta->prereserved_count] = self->data_section.start_positions[i];
-	
-	// get ready for parsing the text section
+	// get ready for parsing the logic section
 	
 	self->state.stack_size = 1ll << 16;
-	self->state.stack = (uint64_t*) zvm_malloc((uint64_t) self, self->state.stack_size * sizeof(*self->state.stack));
-	self->state.registers[REGISTER_SP] = (int64_t) (self->state.stack + self->state.stack_size);
+	self->state.stack = (uint64_t*) zvm_allocate(self, self->state.stack_size * sizeof(*self->state.stack));
+	self->state.registers[ZED_REGISTER_SP] = (int64_t) (self->state.stack + self->state.stack_size);
 	
-	*((int64_t*) (self->state.registers[REGISTER_SP] -= sizeof(int64_t))) = self->state.registers[REGISTER_IP] = self->meta->main_reserved_position / sizeof(uint16_t); // push main label position to stack
-	self->text_section_pointer = (uint16_t*) (self->pointer + self->meta->text_section_start);
-	
+	// push main label position (index 0) to the stack
+
+	int64_t* stack_pointer = (int64_t*) (self->state.registers[ZED_REGISTER_SP] -= sizeof(int64_t));
+	self->state.registers[ZED_REGISTER_IP] = self->positions[0];
+	*stack_pointer = self->state.registers[ZED_REGISTER_IP];
+
+	return 0;
 }
 
-uint64_t zvm_program_get_next_token(zvm_program_t* self, uint64_t* type, uint64_t* data) { // get the next token and advance all pointers and all
-	uint64_t token = (uint64_t) *(self->text_section_pointer + self->state.registers[REGISTER_IP]++);
-	*type = token & 0x00FF;
+typedef struct {
+	zed_instruction_t* instruction;
+
+	uint8_t operation;
+
+	uint8_t operand1_type;
+	uint8_t operand2_type;
+	uint8_t operand3_type;
+
+	uint64_t operand1_data;
+	uint64_t operand2_data;
+	uint64_t operand3_data;
+} zvm_instruction_t; // not to be confused with zed_instruction_t
+
+static inline void zvm_next_instruction(zvm_program_t* self, zvm_instruction_t* instruction) {
+	instruction->instruction = (zed_instruction_t*) (self->logic_section + self->state.registers[ZED_REGISTER_IP]++);
 	
-	if (*type == TOKEN_NUMBER || *type == TOKEN_RES_POS || *type == TOKEN_RESERVED) { // is the data size of the token 8 bytes (64 bit)?
-		if (self->state.registers[REGISTER_IP] % ZVM_SIZE) { // 64 bit / 2 byte (32 bit) aligned?
-			*data = *(((uint64_t*) self->text_section_pointer) + self->state.registers[REGISTER_IP] / ZVM_SIZE + 1);
-			self->state.registers[REGISTER_IP] = (self->state.registers[REGISTER_IP] / ZVM_SIZE + 2) * ZVM_SIZE;
-			
-		} else { // not 64 bit / 2 byte (32 bit) aligned?
-			*data = *(((uint64_t*) self->text_section_pointer) + self->state.registers[REGISTER_IP] / ZVM_SIZE);
-			self->state.registers[REGISTER_IP] = (self->state.registers[REGISTER_IP] / ZVM_SIZE + 1) * ZVM_SIZE;
-			
-		}
-		
-	} else { // is the data size a single byte?
-		*data = (token & 0xFF00) >> 8;
-		
-	}
-	
-	*type = *type == TOKEN_BYTE ? TOKEN_NUMBER : *type; // from now on, consider a byte token as a number token
-	return token;
-	
+	instruction->operation = instruction->instruction->operation;
+
+	instruction->operand1_type = instruction->instruction->operand1_type;
+	instruction->operand2_type = instruction->instruction->operand2_type;
+	instruction->operand3_type = instruction->instruction->operand3_type;
+
+	if (instruction->instruction->operand1_64_bit) instruction->operand1_data = self->logic_section[self->state.registers[ZED_REGISTER_IP]++];
+	else instruction->operand1_data = instruction->instruction->operand1_data;
+
+	if (instruction->instruction->operand2_64_bit) instruction->operand2_data = self->logic_section[self->state.registers[ZED_REGISTER_IP]++];
+	else instruction->operand2_data = instruction->instruction->operand2_data;
+
+	if (instruction->instruction->operand3_64_bit) instruction->operand3_data = self->logic_section[self->state.registers[ZED_REGISTER_IP]++];
+	else instruction->operand3_data = instruction->instruction->operand3_data;
 }
 
-#include "instructions.h"
+#include "operations.h"
 
-int64_t zvm_program_run_loop_phase(zvm_program_t* self) {
-	uint64_t type, data;
-	zvm_program_get_next_token(self, &type, &data); // get next token
+int zvm_program_run_loop_phase(zvm_program_t* self) {
+	zvm_instruction_t instruction;
+	zvm_next_instruction(self, &instruction);
 	
-	static struct {const char* s;} assembler_instructions[] = {
-		{"cad"}, {"mov"},
-		{"cnd"}, {"cmp"},
-		{"jmp"}, {"cal"}, {"ret"},
-		{"psh"}, {"pop"},
-		{"add"}, {"sub"}, {"mul"}, {"div"},
-		{"and"}, {"or" }, {"xor"}, {"not"},
-		{"shl"}, {"shr"}, {"ror"},
-	};
+	zvm_operations[instruction.operation](self, &instruction);
 	
-	// am assuming type == TOKEN_INSTRUCTION
-	//~ printf("INSTRUCTION %lx\t%ld\t%s\n", type, self->state.registers[REGISTER_IP], assembler_instructions[data].s);
-	((void (*)(zvm_program_t* self)) zvm_instructions[data])(self);
-	
-	if (self->state.registers[REGISTER_IP] > (self->meta->length - self->meta->text_section_start) * ZVM_SIZE) {
-		self->error_code = self->state.registers[REGISTER_G0]; // get error code
-		
-		// parse signature
-		
-		uint64_t signature = *(((uint64_t*) self->text_section_pointer) + (self->state.registers[REGISTER_IP] += ZVM_SIZE) / ZVM_SIZE); 
-		char signature_string[9] = {0};
-		memcpy(signature_string, &signature, sizeof(signature));
-		
-		if (strcmp(signature_string, "AQUA-ZED") != 0) {
-			// program signature does not match the default signature
-			
-		}
-		
+	if (self->state.registers[ZED_REGISTER_IP] > self->meta_section->logic_section_words) {
+		self->error_code = self->state.registers[ZED_REGISTER_G0]; // get error code
 		return 1; // stop execution
 		
 	} else {
 		return 0; // continue execution
-		
 	}
-	
 }

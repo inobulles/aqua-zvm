@@ -10,7 +10,7 @@
 | Opcode               | 0x9                   |
 | Operands             | 3                     |
 
-Copies the integer division of the second operand (`source_a`) by the third operand (`source_b`) to the first operand (`destination`).
+Copies the signed integer division of the second operand (`source_a`) by the third operand (`source_b`) to the first operand (`destination`).
 
 If `source_a` or `source_b` is an 8-bit address, the value it points to will be sign-extended to 64 bits before division.
 
@@ -25,15 +25,17 @@ div destination source_a source_b
 
 ## Flags and registers affected
 
-The fourth argument register (`a4`) is set to the remainder of the division (i.e. the modulo of `source_a` by `source_b`).
+The fourth flag register (`f3`) is set to the remainder of the division (i.e. the modulo of `source_a` by `source_b`).
 
 ## Pseudocode
 
 ### C-like
 
-```c
-destination = source_a / source_b; // copy the division of 'source_a' by 'source_b' to 'destination'
-a4 = source_a % source_b; // copy the modulo of 'source_a' by 'source_b' to 'destination'
+```c++
+#include <stdint.h>
+
+destination = (int64_t) source_a / (int64_t) source_b; // copy the division of 'source_a' by 'source_b' to 'destination'
+f3 = source_a % source_b; // copy the modulo of 'source_a' by 'source_b' to 'f3'
 ```
 
 ## History

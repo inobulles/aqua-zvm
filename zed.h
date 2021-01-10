@@ -30,7 +30,7 @@ typedef struct {
 // rather, they're for improving readability inside of dependant source files
 // so it's really not a big deal if you don't use them
 
-#define ZED_INSTRUCTION_COUNT 16
+#define ZED_OPERATION_COUNT 16
 #define ZED_REGISTER_COUNT 16
 
 typedef struct {
@@ -48,7 +48,7 @@ typedef struct {
 	unsigned operand1_data   : 16;
 	unsigned operand2_data   : 16;
 	unsigned operand3_data   : 16;
-} zed_instruction_t;
+} zed_instruction_t; // 64 bits (size of a logic section word)
 
 #define ZED_OPERAND_16_TYPE_NONE           (0b0000 | 0)
 #define ZED_OPERAND_16_TYPE_REGISTER       (0b0000 | 1)
@@ -104,7 +104,7 @@ typedef enum {
 	ZED_REGISTER_IP =  0, ZED_REGISTER_SP =  1, ZED_REGISTER_BP =  2, ZED_REGISTER_AD =  3,
 	ZED_REGISTER_G0 =  4, ZED_REGISTER_G1 =  5, ZED_REGISTER_G2 =  6, ZED_REGISTER_G3 =  7,
 	ZED_REGISTER_A0 =  8, ZED_REGISTER_A1 =  9, ZED_REGISTER_A2 = 10, ZED_REGISTER_A3 = 11,
-	ZED_REGISTER_SF = 12, ZED_REGISTER_ZF = 13, ZED_REGISTER_OF = 14, ZED_REGISTER_CF = 15,
+	ZED_REGISTER_F0 = 12, ZED_REGISTER_F1 = 13, ZED_REGISTER_F2 = 14, ZED_REGISTER_F3 = 15,
 } zed_register_t;
 
 static zed_token_t zed_registers[] = {
@@ -122,10 +122,10 @@ typedef enum {
 } zed_kfunc_t;
 
 static zed_token_t zed_kfuncs[] = {
-	{"noop"},           {"print"},            {"exit"},
-	{"allocate"},       {"free"},             {"copy"},          {"zero"},
-	{"get_platform"},   {"platform_command"}, {"create_device"}, {"send_device"}, {"native"},
-	{"get_requests"},
+	{"noop"},          {"print"},            {"exit"},
+	{"allocate"},      {"free"},             {"copy"},   {"zero"},
+	{"get_platform"},  {"platform_command"}, {"native"}, {"get_requests"},
+	{"create_device"}, {"send_device"}
 };
 
 #endif
