@@ -8,29 +8,39 @@
 | Name                 | kfunc call            |
 | `zed.h` denomination | `ZED_INSTRUCTION_CAL` |
 | Opcode               | 0x4                   |
-| Operands             | 1                     |
+| Operands             | 2                     |
 
-Calls the kfunc (KOS function) denoted by the first operand (`kfunc`).
+Calls the kfunc (KOS function) denoted by the second operand (`kfunc`) and copies the return value to the first operand (`retval`).
 
-`kfunc` can only be a kfunc index.
+If `kfunc` is an 8-bit address, the value it points to will be zero-extended to 64 bits before calling.
+If `retval` is an 8-bit address, it'll truncate the return value of the kfunc to its 8 lowest bits before copying.
+
+`kfunc` can be a register, an address (8 or 64-bit), or a kfunc index.
+`retval` can be a register or an address (8 or 64-bit).
 
 ## ZASM syntax
 
 ```zasm
-cal kfunc
+cal retval kfunc
 ```
 
 ## Flags and registers affected
 
-The first general purpose register (`g0`) is set to the value returned by the kfunc.
+None
 
 ## Pseudocode
 
 ### C-like
 
-```c
-g0 = kfunc_pointers[kfunc](a0, a1, a2, a3); // call the kfunc at index 'kfunc' and store the return value in 'g0'
-                                            // the argument registers ('a0', 'a1', 'a2', and 'a3') are set depending on the kfunc in question
+```c++
+#include <stdint.h>
+
+if (kfunc.type == ADDRESS_8) { // on most platforms this isn't possible, which is why it isn't included in the default ZVM
+	kfunc = (uint8_t) kfunc; // zero extend 'kfunc'
+}
+
+retval = kfunc(a0, a1, a2, a3); // call the kfunc at index 'kfunc' and copy the return value to 'retval'
+                            // the argument registers ('a0', 'a1', 'a2', and 'a3') are set by the user before calling depending on the kfunc in question
 ```
 
 ## History

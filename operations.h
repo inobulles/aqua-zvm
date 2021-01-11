@@ -12,22 +12,22 @@ static inline void zvm_set_value(zvm_program_t* self, uint64_t type, uint64_t da
 
 static inline uint64_t zvm_get_value(zvm_program_t* self, uint64_t type, uint64_t data) { // get object (based on type and data) and return value
 	switch (type) {
-		case ZED_OPERAND_16_TYPE_REGISTER:       return                               self->state.registers[data];
-		case ZED_OPERAND_16_TYPE_CONSTANT:       return                                                     data;
+		case ZED_OPERAND_16_TYPE_REGISTER:       return                                  self->state.registers[data];
+		case ZED_OPERAND_16_TYPE_CONSTANT:       return                                                        data;
 
-		case ZED_OPERAND_16_TYPE_ADDRESS_64:     return                  *(uint64_t*) self->state.registers[data];
-		case ZED_OPERAND_16_TYPE_ADDRESS_8:      return (uint64_t)       *(uint8_t *) self->state.registers[data]; // zero extended by default
+		case ZED_OPERAND_16_TYPE_ADDRESS_64:     return                     *(uint64_t*) self->state.registers[data];
+		case ZED_OPERAND_16_TYPE_ADDRESS_8:      return (uint64_t)          *(uint8_t *) self->state.registers[data]; // zero extended by default
 
-		case ZED_OPERAND_16_TYPE_KFUNC_INDEX:    return (uint64_t)                       zvm_kfunc_pointers[data];
-		case ZED_OPERAND_16_TYPE_POSITION_INDEX: return (uint64_t)                          self->positions[data];
+		case ZED_OPERAND_16_TYPE_KFUNC_INDEX:    return data < ZVM_KFUNC_COUNT ? (uint64_t) zvm_kfunc_pointers[data] : 0;
+		case ZED_OPERAND_16_TYPE_POSITION_INDEX: return (uint64_t)                             self->positions[data];
 
-		case ZED_OPERAND_16_TYPE_DATA_INDEX:     return (uint64_t) (self->rom + self->data_section_elements[data].data_offset);
+		case ZED_OPERAND_16_TYPE_DATA_INDEX:     return (uint64_t)    (self->rom + self->data_section_elements[data].data_offset);
 
 		default: return 0;
 	}
 }
 
-static inline uint64_t zvm_get_value_sext(zvm_program_t* self, uint64_t type, uint64_t data) {
+static inline uint64_t zvm_get_value_sext(zvm_program_t* self, uint64_t type, uint64_t data) { // sign-extend if operand type is 8-bit address
 	if (type == ZED_OPERAND_16_TYPE_ADDRESS_8) {
 		return (uint64_t) *(int8_t*) self->state.registers[data];
 	}
@@ -58,28 +58,30 @@ static void zvm_jmp(zvm_program_t* self, zvm_instruction_t* instruction) {
 }
 
 static void zvm_cal(zvm_program_t* self, zvm_instruction_t* instruction) {
-	zvm_kfunc_t kfunc = (zvm_kfunc_t) zvm_get_value(self, instruction->operand1_type, instruction->operand1_data);
+	zvm_kfunc_t kfunc = (zvm_kfunc_t) zvm_get_value(self, instruction->operand2_type, instruction->operand2_data);
 	
-	self->state.registers[ZED_REGISTER_G0] = kfunc(self,
+	uint64_t retval = kfunc(self,
 		self->state.registers[ZED_REGISTER_A0],
 		self->state.registers[ZED_REGISTER_A1],
 		self->state.registers[ZED_REGISTER_A2],
 		self->state.registers[ZED_REGISTER_A3]
 	);
+
+	zvm_set_value(self, instruction->operand1_type, instruction->operand1_data, retval);
 }
 
 static void zvm_cpe(zvm_program_t* self, zvm_instruction_t* instruction) {
-	uint64_t source_a = zvm_get_value(self, instruction->operand1_type, instruction->operand1_data);
-	uint64_t source_b = zvm_get_value(self, instruction->operand2_type, instruction->operand2_data);
+	int64_t source_a = zvm_get_value_sext(self, instruction->operand1_type, instruction->operand1_data);
+	int64_t source_b = zvm_get_value_sext(self, instruction->operand2_type, instruction->operand2_data);
 
-	self->state.registers[ZED_REGISTER_F2] = source_a > source_b;
+	self->state.registers[ZED_REGISTER_F2] = (uint64_t) source_a > (uint64_t) source_b;
 
 	uint64_t comparison = source_a - source_b; // shouldn't really matter if this stuff is signed or not
 	uint8_t sign = comparison >> 63;
 
 	self->state.registers[ZED_REGISTER_F1] = sign;
 
-	self->state.registers[ZED_REGISTER_F3] = source_a >> 63 != sign;
+	self->state.registers[ZED_REGISTER_F3] = (uint64_t) source_a >> 63 != sign;
 	self->state.registers[ZED_REGISTER_F0] = !comparison;
 
 	uint64_t source_e = zvm_get_value(self, instruction->operand3_type, instruction->operand3_data); // important that this go AFTER comparison

@@ -10,11 +10,12 @@
 | Opcode               | 0x5                   |
 | Operands             | 3                     |
 
-Compares the first operand (`source_a`) with the second operand (`source_b`) first, and then only moves on to the next position in the instruction stream if the third operand (`source_e`) is set (i.e. it skips the next instruction if `source_e` is **not** set). The comparison is performed by subtracting `source_b` from `source_a`, and setting flags according to the result.
+Compares the first operand (`source_a`) with the second operand (`source_b`) first, and then only moves on to the next position in the instruction stream if the third operand (`source_e`) is set (i.e. it skips the next instruction if `source_e` is **not** set). `source_e` being set specifically means it's lowest bit is set to '1' (you can use the `red` (reduce) instruction to set that lowest bit if any of the other bits are set). The comparison is performed by subtracting `source_b` from `source_a`, and setting the flag registers according to the result.
 
 If `source_a` or `source_b` is an 8-bit address, the value it points to will be sign-extended to 64 bits before comparison.
 
-`source_a`, `source_b`, and `source_e` can each be a register, a constant, an address (8 or 64-bit), a kfunc index, a position index, or a data index.
+`source_a` and `source_b` can each be a register, a constant, an address (8 or 64-bit), a kfunc index (so that you can see if two kfuncs are equal), a position index, or a data index.
+`source_e` can be a register, a constant, or an address (8 or 64-bit).
 
 ## ZASM syntax
 
@@ -38,18 +39,28 @@ The first flag register (`f0`) is set if the result of the comparison is equal t
 
 ### C-like
 
-```c
+```c++
 #include <stdint.h>
+
+if (source_a.type == ADDRESS_8) {
+	source_a = (int8_t) source_a; // sign extend 'source_a'
+}
+
+if (source_b.type == ADDRESS_8) {
+	source_b = (int8_t) source_b; // sign extend 'source_b'
+}
 
 f2 = (uint64_t) source_a > (uint64_t) source_b;
 
-int64_t comparison = source_a - source_b;
-uint8_t sign = (uint64_t) comparison >> 63;
+uint64_t comparison = source_a - source_b;
+uint8_t sign = comparison >> 63;
 
 f1 = sign;
 
 f3 = (uint64_t) source_a >> 63 != sign;
 f0 = comparison == 0; // i.e. source_a == source_b
+
+// sign or zero extension for 'source_e' is irrelevant here
 
 if (!source_e) { // note that 'source_e' could very well be one of the flags just set
 	goto next_instruction; // skip next instruction

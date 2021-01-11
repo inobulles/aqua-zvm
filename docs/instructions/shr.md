@@ -12,9 +12,10 @@
 
 Copies the second operand (`source`) shifted right by the amount of bits denoted by the third operand (`shift`) to the first operand (`destination`).
 
-If `source` is an 8-bit address, the value it points to will be padded to 64 bits with zeros before being shifted.
+If `source` or `shift` is an 8-bit address, the value it points to will be zero-extended to 64 bits before shifting.
+If `destination` is an 8-bit address, it'll truncate the result of the shift to its 8 lowest bits before copying.
 
-`source` and `shift` can each be a register, a constant, an address (8 or 64-bit), a kfunc index, a position index, or a data index.
+`source` and `shift` can each be a register, a constant, an address (8 or 64-bit), a position index, or a data index.
 `destination` can be a register or an address (8 or 64-bit).
 
 ## ZASM syntax
@@ -34,18 +35,16 @@ None
 ```c++
 #include <stdint.h>
 
-uint64_t padded_source = 0;
-
 if (source.type == ADDRESS_8) {
-	padded_source |= source_a & 0xFF; // make sure 'source' is padded to 64 bits with zeros
+	source = (uint8_t) source; // zero-extend 'source'
 }
 
-else {
-	padded_source = source;
+if (shift.type == ADDRESS_8) {
+	shift = (uint8_t) shift; // zero-extend 'shift'
 }
 
-destination = (uint64_t) padded_source >> shift; // copy the 'padded_source' shifted right by 'shift' bits to 'destination'
-                                                 // note the cast to 'uint64_t' to make sure this is *shifted* right, and not *rotated* right
+destination = (uint64_t) source >> shift; // copy the 'source' shifted right by 'shift' bits to 'destination'
+                                          // note the cast to 'uint64_t' to make sure this is *shifted* right, and not *rotated* right
 ```
 
 ## History

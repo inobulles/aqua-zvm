@@ -12,7 +12,7 @@
 
 Reduces (bitwise or's together) all the bits within the second operand (`source`) to a single bit, and fills the first operand (`destination`) with that bit.
 
-`source` can be a register, a constant, an address (8 or 64-bit), a kfunc index, a position index, or a data index.
+`source` can be a register, a constant, an address (8 or 64-bit), a kfunc index (so that you can see if a kfunc exists), a position index, or a data index.
 `destination` can be a register or an address (8 or 64-bit).
 
 ## ZASM syntax
@@ -31,6 +31,8 @@ None
 
 ```c
 #include <stdint.h>
+
+// sign or zero extension for 'source' is irrelevant here
 
 uint8_t reduced = !!source; // reduce 'source' to a single bit
 destination = 0 - reduced; // fill 'destination' with that bit

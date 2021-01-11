@@ -63,3 +63,5 @@ static zvm_kfunc_t zvm_kfunc_pointers[] = { // kfunc pointers (some of these are
 	(zvm_kfunc_t) kos_get_platform,  (zvm_kfunc_t) kos_platform_command, (zvm_kfunc_t) kos_native, (zvm_kfunc_t) kos_get_requests,
 	(zvm_kfunc_t) kos_create_device, (zvm_kfunc_t) kos_send_device
 };
+
+#define ZVM_KFUNC_COUNT (sizeof(zvm_kfunc_pointers) / sizeof(zvm_kfunc_t))
