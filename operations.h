@@ -59,7 +59,7 @@ static void zvm_jmp(zvm_program_t* self, zvm_instruction_t* instruction) {
 
 static void zvm_cal(zvm_program_t* self, zvm_instruction_t* instruction) {
 	zvm_kfunc_t kfunc = (zvm_kfunc_t) zvm_get_value(self, instruction->operand2_type, instruction->operand2_data);
-	
+
 	uint64_t retval = kfunc(self,
 		self->state.registers[ZED_REGISTER_A0],
 		self->state.registers[ZED_REGISTER_A1],

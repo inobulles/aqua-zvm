@@ -111,7 +111,7 @@ static zed_token_t zed_registers[] = {
 	{"ip"}, {"sp"}, {"bp"}, {"ad"},
 	{"g0"}, {"g1"}, {"g2"}, {"g3"},
 	{"a0"}, {"a1"}, {"a2"}, {"a3"},
-	{"sf"}, {"zf"}, {"of"}, {"cf"},
+	{"f0"}, {"f1"}, {"f2"}, {"f3"},
 };
 
 typedef enum {
