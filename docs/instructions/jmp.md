@@ -12,8 +12,6 @@
 
 Transfers program control to the position denoted by the first operand (`position`) in the instruction stream.
 
-If `position` is an inexistant position, the jump will be ignored, in which case the program control stays as it was before the jump instruction.
-
 If `position` is an 8-bit address, the value it points to will be zero-extended to 64 bits before transferring.
 
 `position` can be a register, an address (8 or 64-bit), or a position index.
@@ -39,12 +37,8 @@ if (position.type == ADDRESS_8) {
 	position = (uint8_t) position; // zero extend 'position'
 }
 
-if ((uint64_t) position < program_length) {
-	ip = position; // set 'ip' to 'position' (not necessarily the case on all implementations)
-	goto position; // jump to 'position'
-}
-
-// error handling can be done after the 'goto'
+ip = position; // set 'ip' to 'position' (not necessarily the case on all implementations)
+goto position; // jump to 'position'
 ```
 
 ## History

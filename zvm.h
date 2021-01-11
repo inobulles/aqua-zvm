@@ -119,7 +119,7 @@ static inline void zvm_next_instruction(zvm_program_t* self, zvm_instruction_t* 
 	else instruction->operand3_data = instruction->instruction->operand3_data;
 }
 
-#include "operations.h"
+#include "instructions.h"
 
 int zvm_program_run_loop_phase(zvm_program_t* self) {
 	zvm_instruction_t instruction;
