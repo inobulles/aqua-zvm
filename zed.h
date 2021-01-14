@@ -115,17 +115,17 @@ static zed_token_t zed_registers[] = {
 };
 
 typedef enum {
-	ZED_KFUNC_NOOP = 0, ZED_KFUNC_PRINT = 1, ZED_KFUNC_EXIT = 2,
-	ZED_KFUNC_ALLOCATE = 3, ZED_KFUNC_FREE = 4, ZED_KFUNC_COPY = 5, ZED_KFUNC_ZERO = 6,
-	ZED_KFUNC_GET_PLATFORM = 7, ZED_KFUNC_PLATFORM_COMMAND = 8, ZED_KFUNC_CREATE_DEVICE = 9, ZED_KFUNC_SEND_DEVICE = 10, ZED_KFUNC_NATIVE = 11,
+	ZED_KFUNC_NOOP         =  0, ZED_KFUNC_PRINT            = 1, ZED_KFUNC_EXIT         = 2,
+	ZED_KFUNC_ALLOCATE     =  3, ZED_KFUNC_FREE             = 4, ZED_KFUNC_COPY         = 5, ZED_KFUNC_ZERO        =  6,
+	ZED_KFUNC_GET_PLATFORM =  7, ZED_KFUNC_PLATFORM_COMMAND = 8, ZED_KFUNC_QUERY_DEVICE = 9, ZED_KFUNC_SEND_DEVICE = 10, ZED_KFUNC_NATIVE = 11,
 	ZED_KFUNC_GET_REQUESTS = 12,
 } zed_kfunc_t;
 
 static zed_token_t zed_kfuncs[] = {
-	{"noop"},          {"print"},            {"exit"},
-	{"allocate"},      {"free"},             {"copy"},   {"zero"},
-	{"get_platform"},  {"platform_command"}, {"native"}, {"get_requests"},
-	{"create_device"}, {"send_device"}
+	{"noop"},         {"print"},            {"exit"},
+	{"allocate"},     {"free"},             {"copy"},   {"zero"},
+	{"get_platform"}, {"platform_command"}, {"native"}, {"get_requests"},
+	{"query_device"}, {"send_device"}
 };
 
 #endif
