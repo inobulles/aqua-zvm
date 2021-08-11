@@ -1,9 +1,11 @@
 #if !defined(__AQUA_ZED__ZED_H)
 #define __AQUA_ZED__ZED_H
+
 // zed and zpk filetype related macros
 
 #define ZPK_UNIQUE_PATH "unique"
 #define ZPK_ROM_PATH "rom.zed"
+#define ZPK_NATIVE_BINARY_PATH "native.bin"
 
 #define ZPK_META_NAME_PATH "meta/name"
 #define ZPK_META_AUTHOR_PATH "meta/author"
@@ -28,10 +30,11 @@ typedef struct {
 
 // note that these following macros aren't really here to make changing the ZED standard easier
 // rather, they're for improving readability inside of dependant source files
-// so it's really not a big deal if you don't use them
+// so it's really not a big deal if you don't use them :wink:
 
 #define ZED_OPERATION_COUNT 16
 #define ZED_REGISTER_COUNT 16
+#define ZED_KFUNC_COUNT 13
 
 typedef struct {
 	unsigned operation       : 4;

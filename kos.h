@@ -55,7 +55,7 @@ uint64_t zvm_zero(zvm_program_t* self, uint64_t dst, uint64_t bytes) {
 	return 0;
 }
 
-typedef uint64_t (*zvm_kfunc_t) (zvm_program_t* self, ...); // technically should be called 'zvm_kfunc_pointer_t' but whatever
+typedef uint64_t (*zvm_kfunc_t) (zvm_program_t* self, ...); // technically should be called 'zvm_kfunc_pointer_t' but whatever, that's too long
 
 static zvm_kfunc_t zvm_kfunc_pointers[] = { // kfunc pointers (some of these are integrated in this file as they are common between all kos')
 	(zvm_kfunc_t) zvm_noop,         (zvm_kfunc_t) zvm_print,            (zvm_kfunc_t) zvm_exit,                                                                        // base functions
