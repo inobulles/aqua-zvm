@@ -50,7 +50,7 @@ if (mask.type == ADDRESS_8) {
 	padded_mask |= mask & 0xFF; // make sure 'mask' is padded to 64 bits with zeros
 }
 
-for (int i, j = 0; i < 64 && j < destination.length; i++) {
+for (int i = 0, j = 0; i < 64 && j < destination.length; i++) {
 	if (padded_mask.bits[i]) {
 		destination.bits[j] = padded_source.bits[i];
 		j++;
