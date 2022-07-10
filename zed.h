@@ -2,6 +2,7 @@
 #define __AQUA_ZED__ZED_H
 
 // zed and zpk filetype related macros
+// TODO update this
 
 #define ZPK_UNIQUE_PATH "unique"
 #define ZPK_ROM_PATH "rom.zed"
@@ -67,6 +68,7 @@ typedef struct {
 #define ZED_OPERAND_64_TYPE_DATA_INDEX     (0b1000 | 7)
 
 // instruction set architecture related macros
+// we must declare the token list variables unused, because GCC for some reason complains about defined static variables in headers
 
 typedef struct {
 	char* name; // must be null-terminated
@@ -92,7 +94,7 @@ typedef enum {
 	ZED_OPCODE_SHL = 14, ZED_OPCODE_SHR = 15,
 } zed_opcode_t;
 
-static zed_token_t zed_opcodes[] = {
+static __attribute__((unused)) zed_token_t zed_opcodes[] = {
 	{"mov"},
 	{"red"}, {"inv"},
 	{"jmp"}, {"cal"},
@@ -110,7 +112,7 @@ typedef enum {
 	ZED_REGISTER_F0 = 12, ZED_REGISTER_F1 = 13, ZED_REGISTER_F2 = 14, ZED_REGISTER_F3 = 15,
 } zed_register_t;
 
-static zed_token_t zed_registers[] = {
+static __attribute__((unused)) zed_token_t zed_registers[] = {
 	{"ip"}, {"sp"}, {"bp"}, {"ad"},
 	{"g0"}, {"g1"}, {"g2"}, {"g3"},
 	{"a0"}, {"a1"}, {"a2"}, {"a3"},
@@ -124,7 +126,7 @@ typedef enum {
 	ZED_KFUNC_GET_REQUESTS = 12,
 } zed_kfunc_t;
 
-static zed_token_t zed_kfuncs[] = {
+static __attribute__((unused)) zed_token_t zed_kfuncs[] = {
 	{"noop"},         {"print"},            {"exit"},
 	{"allocate"},     {"free"},             {"copy"},   {"zero"},
 	{"get_platform"}, {"platform_command"}, {"native"}, {"get_requests"},
