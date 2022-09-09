@@ -48,7 +48,7 @@ int zvm_program_run_setup_phase(zvm_program_t* self) {
 	self->meta_section = (zed_meta_section_t*) self->rom;
 
 	if (self->meta_section->magic != ZED_MAGIC) {
-		fprintf(stderr, "[AQUA ZVM] ERROR ROM is not a valid ZED ROM (magic = 0x%lx)\n", self->meta_section->magic);
+		fprintf(stderr, "[AQUA ZVM] ERROR ROM is not a valid ZED ROM (magic = 0x%lx)\n", (long) self->meta_section->magic);
 		return 1;
 	}
 
