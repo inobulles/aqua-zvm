@@ -79,7 +79,7 @@ int zvm_program_run_setup_phase(zvm_program_t* self) {
 	
 	// push main label position (index 0) to the stack
 
-	int64_t* stack_pointer = (int64_t*) (self->state.registers[ZED_REGISTER_SP] -= sizeof(int64_t));
+	int64_t* stack_pointer = (int64_t*) (intptr_t) (self->state.registers[ZED_REGISTER_SP] -= sizeof(int64_t));
 	self->state.registers[ZED_REGISTER_IP] = self->positions[0];
 	*stack_pointer = self->state.registers[ZED_REGISTER_IP];
 
