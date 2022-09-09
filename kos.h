@@ -35,8 +35,8 @@ uint64_t zvm_free(zvm_program_t* self, uint64_t __pointer, __attribute__((unused
 	if (*pointer) {
 		long page_bytes = sysconf(_SC_PAGESIZE);
 		
-		munmap((void*) __pointer, *pointer);
-		munmap((void*) __pointer - page_bytes, *pointer + page_bytes);
+		munmap((void*) (intptr_t) __pointer, *pointer);
+		munmap((void*) (intptr_t) __pointer - page_bytes, *pointer + page_bytes);
 		
 	} else {
 		free(pointer);
