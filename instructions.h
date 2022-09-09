@@ -3,25 +3,25 @@
 
 static inline void zvm_set_value(zvm_program_t* self, uint64_t type, uint64_t data, uint64_t value) { // set object (based on type and data) to value
 	switch (type) {
-		case ZED_OPERAND_16_TYPE_REGISTER:                self->state.registers[data] = value; break;
+		case ZED_OPERAND_16_TYPE_REGISTER:                           self->state.registers[data] = value; break;
 			
-		case ZED_OPERAND_16_TYPE_ADDRESS_64: *(uint64_t*) self->state.registers[data] = value; break;
-		case ZED_OPERAND_16_TYPE_ADDRESS_8:  *(uint8_t *) self->state.registers[data] = value; break;
+		case ZED_OPERAND_16_TYPE_ADDRESS_64: *(uint64_t*) (intptr_t) self->state.registers[data] = value; break;
+		case ZED_OPERAND_16_TYPE_ADDRESS_8:  *(uint8_t *) (intptr_t) self->state.registers[data] = value; break;
 	}
 }
 
 static inline uint64_t zvm_get_value(zvm_program_t* self, uint64_t type, uint64_t data) { // get object (based on type and data) and return value
 	switch (type) {
-		case ZED_OPERAND_16_TYPE_REGISTER:       return                                  self->state.registers[data];
-		case ZED_OPERAND_16_TYPE_CONSTANT:       return                                                        data;
+		case ZED_OPERAND_16_TYPE_REGISTER:       return                                    self->state.registers[data];
+		case ZED_OPERAND_16_TYPE_CONSTANT:       return                                                          data;
 
-		case ZED_OPERAND_16_TYPE_ADDRESS_64:     return                     *(uint64_t*) self->state.registers[data];
-		case ZED_OPERAND_16_TYPE_ADDRESS_8:      return (uint64_t)          *(uint8_t *) self->state.registers[data]; // zero extended by default
+		case ZED_OPERAND_16_TYPE_ADDRESS_64:     return            *(uint64_t*) (intptr_t) self->state.registers[data];
+		case ZED_OPERAND_16_TYPE_ADDRESS_8:      return (uint64_t) *(uint8_t *) (intptr_t) self->state.registers[data]; // zero extended by default
 
-		case ZED_OPERAND_16_TYPE_KFUNC_INDEX:    return data < ZVM_KFUNC_COUNT ? (uint64_t) zvm_kfunc_pointers[data] : 0;
-		case ZED_OPERAND_16_TYPE_POSITION_INDEX: return (uint64_t)                             self->positions[data];
+		case ZED_OPERAND_16_TYPE_KFUNC_INDEX:    return (uint64_t)  (data < ZVM_KFUNC_COUNT ? zvm_kfunc_pointers[data] : 0);
+		case ZED_OPERAND_16_TYPE_POSITION_INDEX: return (uint64_t)                               self->positions[data];
 
-		case ZED_OPERAND_16_TYPE_DATA_INDEX:     return (uint64_t)    (self->rom + self->data_section_elements[data].data_offset);
+		case ZED_OPERAND_16_TYPE_DATA_INDEX:     return (uint64_t)      (self->rom + self->data_section_elements[data].data_offset);
 
 		default: return 0;
 	}
@@ -29,7 +29,7 @@ static inline uint64_t zvm_get_value(zvm_program_t* self, uint64_t type, uint64_
 
 static inline uint64_t zvm_get_value_sext(zvm_program_t* self, uint64_t type, uint64_t data) { // sign-extend if operand type is 8-bit address
 	if (type == ZED_OPERAND_16_TYPE_ADDRESS_8) {
-		return (uint64_t) *(int8_t*) self->state.registers[data];
+		return (uint64_t) *(int8_t*) (intptr_t) self->state.registers[data];
 	}
 
 	return zvm_get_value(self, type, data);
@@ -58,7 +58,7 @@ static void zvm_jmp(zvm_program_t* self, zvm_instruction_t* instruction) {
 }
 
 static void zvm_cal(zvm_program_t* self, zvm_instruction_t* instruction) {
-	zvm_kfunc_t kfunc = (zvm_kfunc_t) zvm_get_value(self, instruction->operand2_type, instruction->operand2_data);
+	zvm_kfunc_t kfunc = (zvm_kfunc_t) (intptr_t) zvm_get_value(self, instruction->operand2_type, instruction->operand2_data);
 
 	uint64_t retval = kfunc(self,
 		self->state.registers[ZED_REGISTER_A0],
