@@ -5,7 +5,7 @@ uint64_t zvm_noop() {
 }
 
 uint64_t zvm_print(zvm_program_t* self, uint64_t string) {
-	printf("%s", (const char*) string);
+	printf("%s", (const char*) (intptr_t) string);
 	fflush(stdout);
 	
 	return 0;
@@ -24,13 +24,13 @@ uint64_t zvm_allocate(zvm_program_t* self, uint64_t bytes) {
 	uint64_t* pointer = (uint64_t*) malloc(bytes + sizeof(uint64_t));
 	*pointer = 0; // set first value to zero to tell zvm_free to use "free" instead of "munmap"
 	              // this is nothing standard, just how i decided to write these functions in this particular implementation of the zvm
-	return (uint64_t) pointer + sizeof(uint64_t);
+	return (uint64_t) (intptr_t) pointer + sizeof(uint64_t);
 }
 
 #include <sys/mman.h>
 
 uint64_t zvm_free(zvm_program_t* self, uint64_t __pointer, __attribute__((unused)) uint64_t bytes) { // bytes argument is obsolete
-	uint64_t* pointer = (uint64_t*) (__pointer - sizeof(uint64_t));
+	uint64_t* pointer = (uint64_t*) (intptr_t) (__pointer - sizeof(uint64_t));
 	
 	if (*pointer) {
 		long page_bytes = sysconf(_SC_PAGESIZE);
@@ -46,12 +46,12 @@ uint64_t zvm_free(zvm_program_t* self, uint64_t __pointer, __attribute__((unused
 }
 
 uint64_t zvm_copy(zvm_program_t* self, uint64_t dst, uint64_t src, uint64_t bytes) {
-	memcpy((void*) dst, (void*) src, bytes);
+	memcpy((void*) (intptr_t) dst, (void*) (intptr_t) src, bytes);
 	return 0;
 }
 
 uint64_t zvm_zero(zvm_program_t* self, uint64_t dst, uint64_t bytes) {
-	memset((void*) dst, 0, bytes);
+	memset((void*) (intptr_t) dst, 0, bytes);
 	return 0;
 }
 
