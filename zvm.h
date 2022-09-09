@@ -53,12 +53,12 @@ int zvm_program_run_setup_phase(zvm_program_t* self) {
 	}
 
 	self->data_section_elements = (zed_data_section_element_t*) (self->rom + self->meta_section->data_section_offset);
-	self->positions = (uint64_t*) (self->rom + self->meta_section->position_section_offset);
-	self->logic_section = (uint64_t*) (self->rom + self->meta_section->logic_section_offset);
+	self->positions = (void*) (self->rom + self->meta_section->position_section_offset);
+	self->logic_section = (void*) (self->rom + self->meta_section->logic_section_offset);
 
 	// allocate bda
 	
-	self->bda = (zvm_bda_t*) zvm_allocate(self, sizeof(*self->bda));
+	self->bda = (void*) (intptr_t) zvm_allocate(self, sizeof(*self->bda));
 	self->bda->signature = ZVM_BDA_SIGNATURE;
 	
 	#ifdef KOS_BDA
@@ -68,14 +68,14 @@ int zvm_program_run_setup_phase(zvm_program_t* self) {
 		kos_bda = self->bda->kos_bda;
 		kos_bda_bytes = sizeof(self->bda->kos_bda);
 		
-		zvm_zero(self, (uint64_t) kos_bda, kos_bda_bytes);
+		zvm_zero(self, (uint64_t) (intptr_t) kos_bda, kos_bda_bytes);
 	#endif
 	
 	// get ready for parsing the logic section
 	
 	self->state.stack_size = 1ll << 16;
-	self->state.stack = (uint64_t*) zvm_allocate(self, self->state.stack_size * sizeof(*self->state.stack));
-	self->state.registers[ZED_REGISTER_SP] = (int64_t) (self->state.stack + self->state.stack_size);
+	self->state.stack = (uint64_t*) (intptr_t) zvm_allocate(self, self->state.stack_size * sizeof(*self->state.stack));
+	self->state.registers[ZED_REGISTER_SP] = (int64_t) (intptr_t) (self->state.stack + self->state.stack_size);
 	
 	// push main label position (index 0) to the stack
 
