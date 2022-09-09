@@ -19,9 +19,9 @@ static inline uint64_t zvm_get_value(zvm_program_t* self, uint64_t type, uint64_
 		case ZED_OPERAND_16_TYPE_ADDRESS_8:      return (uint64_t)          *(uint8_t *) (intptr_t) self->state.registers[data]; // zero extended by default
 
 		case ZED_OPERAND_16_TYPE_KFUNC_INDEX:    return data < ZVM_KFUNC_COUNT ? (uint64_t) (intptr_t) zvm_kfunc_pointers[data] : 0;
-		case ZED_OPERAND_16_TYPE_POSITION_INDEX: return (uint64_t) (intptr_t)                             self->positions[data];
+		case ZED_OPERAND_16_TYPE_POSITION_INDEX: return (uint64_t)                                        self->positions[data];
 
-		case ZED_OPERAND_16_TYPE_DATA_INDEX:     return (uint64_t)               (self->rom + self->data_section_elements[data].data_offset);
+		case ZED_OPERAND_16_TYPE_DATA_INDEX:     return (uint64_t) (intptr_t)    (self->rom + self->data_section_elements[data].data_offset);
 
 		default: return 0;
 	}
